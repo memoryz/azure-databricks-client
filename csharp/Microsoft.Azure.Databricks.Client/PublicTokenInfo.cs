@@ -19,7 +19,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// Server time (in epoch milliseconds) when the token was created.
         /// </summary>
         [JsonPropertyName("creation_time")]
-        public DateTimeOffset CreationTime { get; set; }
+        public DateTimeOffset? CreationTime { get; set; }
 
         /// <summary>
         /// Server time (in epoch milliseconds) when the token will expire, or -1 if not applicable.

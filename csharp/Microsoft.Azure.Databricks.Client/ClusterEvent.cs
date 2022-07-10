@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class ClusterEvent
+    public record ClusterEvent
     {
         /// <summary>
         /// Canonical identifier for the cluster. This field is required.
@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// The timestamp when the event occurred, stored as the number of milliseconds since the unix epoch. Assigned by the Timeline service.
         /// </summary>
         [JsonPropertyName("timestamp")]
-        public DateTimeOffset Timestamp { get; set; }
+        public DateTimeOffset? Timestamp { get; set; }
 
         /// <summary>
         /// This field is required.

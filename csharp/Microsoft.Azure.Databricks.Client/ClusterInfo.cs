@@ -48,7 +48,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// If this identifier is not yet available, the response won’t include this field.
         /// </summary>
         [JsonPropertyName("spark_context_id")]
-        public string SparkContextId { get; set; }
+        public long SparkContextId { get; set; }
 
         /// <summary>
         /// Number of worker nodes that this cluster should have. A cluster has one Spark Driver and num_workers Executors for a total of num_workers + 1 Spark nodes.

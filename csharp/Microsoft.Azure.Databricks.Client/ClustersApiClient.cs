@@ -77,7 +77,7 @@ namespace Microsoft.Azure.Databricks.Client
 
             if (clusterList.TryGetPropertyValue("clusters", out var clusters))
             {
-                return clusters.Deserialize<IEnumerable<ClusterInfo>>();
+                return clusters.Deserialize<IEnumerable<ClusterInfo>>(options);
             }
             else
             {
@@ -98,7 +98,7 @@ namespace Microsoft.Azure.Databricks.Client
         public async Task<IEnumerable<NodeType>> ListNodeTypes(CancellationToken cancellationToken = default)
         {
             var result = await HttpGet<JsonObject>(this.HttpClient, $"{ApiVersion}/clusters/list-node-types", cancellationToken).ConfigureAwait(false);
-            return result["node_types"].Deserialize<IEnumerable<NodeType>>();
+            return result["node_types"].Deserialize<IEnumerable<NodeType>>(options);
         }
 
         public async Task<IDictionary<string, string>> ListSparkVersions(CancellationToken cancellationToken = default)

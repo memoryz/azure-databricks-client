@@ -15,6 +15,6 @@ namespace Microsoft.Azure.Databricks.Client
         /// The last updated timestamp (in milliseconds) for the secret.
         /// </summary>
         [JsonPropertyName("last_updated_timestamp")]
-        public DateTimeOffset LastUpdatedTimestamp { get; set; }
+        public DateTimeOffset? LastUpdatedTimestamp { get; set; }
     }
 }

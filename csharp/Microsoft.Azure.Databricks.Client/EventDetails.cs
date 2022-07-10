@@ -2,7 +2,7 @@
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class EventDetails
+    public record EventDetails
     {
         /// <summary>
         /// The current number of nodes in the cluster.

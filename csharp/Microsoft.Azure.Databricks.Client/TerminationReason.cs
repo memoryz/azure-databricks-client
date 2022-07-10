@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class TerminationReason
+    public record TerminationReason
     {
         [JsonPropertyName("code")]
         public string TerminationCodeText { get; set; }

@@ -27,6 +27,6 @@ namespace Microsoft.Azure.Databricks.Client
         /// The time at which this job was created in epoch milliseconds (milliseconds since 1/1/1970 UTC).
         /// </summary>
         [JsonPropertyName("created_time")]
-        public DateTimeOffset CreatedTime { get; set; }
+        public DateTimeOffset? CreatedTime { get; set; }
     }
 }

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class EventsResponse
+    public record EventsResponse
     {
         /// <summary>
         /// This list of matching events.

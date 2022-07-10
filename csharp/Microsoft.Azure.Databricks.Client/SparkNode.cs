@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// The timestamp when the Spark node is launched.
         /// </summary>
         [JsonPropertyName("start_timestamp")]
-        public DateTimeOffset StartTimestamp { get; set; }
+        public DateTimeOffset? StartTimestamp { get; set; }
 
         /// <summary>
         /// The private IP address of the host instance.
