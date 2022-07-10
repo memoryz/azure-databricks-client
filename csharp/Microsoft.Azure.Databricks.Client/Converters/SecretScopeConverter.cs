@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Converters
 {
     public class SecretScopeConverter : JsonConverter<SecretScope>
     {

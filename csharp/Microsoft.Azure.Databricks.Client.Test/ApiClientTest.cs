@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.Azure.Databricks.Client.Converters;
+using Moq;
 using Moq.Contrib.HttpClient;
 using Newtonsoft.Json.Linq;
 using System.Net;

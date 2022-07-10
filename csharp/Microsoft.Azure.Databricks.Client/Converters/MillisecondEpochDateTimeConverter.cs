@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Converters
 {
     public class MillisecondEpochDateTimeConverter : JsonConverter<DateTimeOffset?>
     {

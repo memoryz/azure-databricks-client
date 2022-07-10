@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Azure.Databricks.Client.Converters;
+using System;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
