@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class RunOnceSettings : RunSettings<RunOnceSettings>
+    public record RunOnceSettings : RunSettings<RunOnceSettings>
     {
         public static RunOnceSettings GetOneTimeSparkJarRunSettings(string runName, string mainClass,
             IEnumerable<string> parameters, IEnumerable<string> jarLibs, string idempotencyToken = null)
@@ -17,7 +17,7 @@ namespace Microsoft.Azure.Databricks.Client
                     MainClassName = mainClass,
                     Parameters = parameters.ToList()
                 },
-                Libraries = jarLibs.Select(jarLib => new JarLibrary(jarLib)).Cast<Library>().ToList(),
+                Libraries = jarLibs.Select(jarLib => new JarLibrary { Jar = jarLib }).Cast<Library>().ToList(),
                 SparkPythonTask = null,
                 SparkSubmitTask = null,
                 NotebookTask = null,
@@ -50,13 +50,13 @@ namespace Microsoft.Azure.Databricks.Client
         /// <summary>
         /// An optional name for the run. The default value is Untitled.
         /// </summary>
-        [JsonProperty(PropertyName = "run_name")]
+        [JsonPropertyName("run_name")]
         public string RunName { get; set; }
 
         /// <summary>
         /// An optional token for the run to ensure the same workload is not run mutliple times.
         /// </summary>
-        [JsonProperty(PropertyName = "idempotency_token")]
+        [JsonPropertyName("idempotency_token")]
         public string IdempotencyToken { get; set; }
     }
 }

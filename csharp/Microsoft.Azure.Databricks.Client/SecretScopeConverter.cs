@@ -1,43 +1,29 @@
 ﻿using System;
 using System.Reflection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class SecretScopeConverter : JsonConverter
+    public class SecretScopeConverter : JsonConverter<SecretScope>
     {
-        /// <inheritdoc />
-        public override bool CanWrite => false;
+        public override bool HandleNull => true;
 
+        public override SecretScope Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var scope = JsonDocument.ParseValue(ref reader).RootElement;
+            var backendType = scope.GetProperty("backend_type");
+            return backendType.Deserialize<ScopeBackendType>() switch
+            {
+                ScopeBackendType.DATABRICKS => scope.Deserialize<DatabricksSecretScope>(),
+                ScopeBackendType.AZURE_KEYVAULT => scope.Deserialize<AzureKeyVaultSecretScope>(),
+                _ => throw new NotSupportedException("SecretScope backend type not recognized: " + backendType),
+            };
+        }
 
-        /// <inheritdoc />
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, SecretScope value, JsonSerializerOptions options)
         {
             throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue,
-            JsonSerializer serializer)
-        {
-            var scope = JObject.Load(reader);
-
-            var backendType = scope["backend_type"].ToObject<ScopeBackendType>();
-            switch (backendType)
-            {
-                case ScopeBackendType.DATABRICKS:
-                    return scope.ToObject<DatabricksSecretScope>();
-                case ScopeBackendType.AZURE_KEYVAULT:
-                    return scope.ToObject<AzureKeyVaultSecretScope>();
-                default:
-                    throw new NotSupportedException("SecretScope backend type not recognized: " + backendType);
-            }
-        }
-
-        public override bool CanConvert(Type objectType)
-        {
-            return typeof(SecretScope).GetTypeInfo().IsAssignableFrom(objectType);
         }
     }
 }

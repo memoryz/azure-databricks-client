@@ -1,13 +1,14 @@
-﻿using Newtonsoft.Json;
+﻿
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class DbfsStorageInfo
+    public record DbfsStorageInfo
     {
         /// <summary>
         /// DBFS destination, e.g. dbfs:/my/path
         /// </summary>
-        [JsonProperty(PropertyName = "destination")]
+        [JsonPropertyName("destination")]
         public string Destination { get; set; }
     }
 }

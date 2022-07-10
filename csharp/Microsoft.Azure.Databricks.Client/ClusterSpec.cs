@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class ClusterSpec
+    public record ClusterSpec
     {
         /// <summary>
         /// The id of an existing cluster that will be used for all runs of this job. Please note that when running jobs on an existing cluster, you may need to manually restart the cluster if it stops responding. We suggest running jobs on new clusters for greater reliability.
         /// </summary>
-        [JsonProperty(PropertyName = "existing_cluster_id")]
+        [JsonPropertyName("existing_cluster_id")]
         public string ExistingClusterId { get; set; }
 
         /// <summary>
@@ -17,13 +17,13 @@ namespace Microsoft.Azure.Databricks.Client
         /// <value>
         /// The new cluster.
         /// </value>
-        [JsonProperty(PropertyName = "new_cluster")]
+        [JsonPropertyName("new_cluster")]
         public ClusterInfo NewCluster { get; set; }
 
         /// <summary>
         /// An optional list of libraries to be installed on the cluster that will execute the job. The default value is an empty list.
         /// </summary>
-        [JsonProperty(PropertyName = "libraries", ItemConverterType = typeof(LibraryConverter))]
+        [JsonPropertyName("libraries")]
         public List<Library> Libraries { get; set; }
     }
 }

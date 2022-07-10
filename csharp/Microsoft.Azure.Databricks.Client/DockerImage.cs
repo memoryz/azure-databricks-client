@@ -1,40 +1,40 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
     /// <summary>
     /// Docker image connection information.
     /// </summary>
-    public class DockerImage
+    public record DockerImage
     {
         /// <summary>
         /// URL for the Docker image.
         /// </summary>
-        [JsonProperty(PropertyName = "url")]
+        [JsonPropertyName("url")]
         public string Url { get; set; }
 
         /// <summary>
         /// Basic authentication information for Docker repository.
         /// </summary>
-        [JsonProperty(PropertyName = "basic_auth")]
+        [JsonPropertyName("basic_auth")]
         public DockerBasicAuth BasicAuth { get; set; }
     }
 
     /// <summary>
     /// Docker repository basic authentication information.
     /// </summary>
-    public class DockerBasicAuth
+    public record DockerBasicAuth
     {
         /// <summary>
         /// User name for the Docker repository.
         /// </summary>
-        [JsonProperty(PropertyName = "username")]
+        [JsonPropertyName("username")]
         public string UserName { get; set; }
 
         /// <summary>
         /// Password for the Docker repository.
         /// </summary>
-        [JsonProperty(PropertyName = "password")]
+        [JsonPropertyName("password")]
         public string Password { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
@@ -6,12 +6,12 @@ namespace Microsoft.Azure.Databricks.Client
     /// Describes the initial set of disks to attach to each instance.
     /// For example, if there are 3 instances and each instance is configured to start with 2 disks, 100 GiB each, then Databricks creates a total of 6 disks, 100 GiB each, for these instances
     /// </summary>
-    public class DiskSpec
+    public record DiskSpec
     {
         /// <summary>
         /// The type of disks to attach.
         /// </summary>
-        [JsonProperty(PropertyName = "disk_type")]
+        [JsonPropertyName("disk_type")]
         public DiskType DiskType { get; set; }
 
         /// <summary>
@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// - Users can choose up to the limit of the disks supported by the node type.
         /// - For node types with no local disk, at least one disk needs to be specified.
         /// </summary>
-        [JsonProperty(PropertyName = "disk_count")]
+        [JsonPropertyName("disk_count")]
         public int DiskCount { get; set; }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// - General Purpose SSD: 100 - 4096 GiB
         /// - Throughput Optimized HDD: 500 - 4096 GiB
         /// </summary>
-        [JsonProperty(PropertyName = "disk_size")]
+        [JsonPropertyName("disk_size")]
         public int DiskSize { get; set; }
     }
 }

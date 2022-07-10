@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class NotebookTask
+    public record NotebookTask
     {
         /// <summary>
         /// The absolute path of the notebook to be run in the Databricks Workspace. This path must begin with a slash. Relative paths will be supported in the future. This field is required.
         /// </summary>
-        [JsonProperty(PropertyName = "notebook_path")]
+        [JsonPropertyName("notebook_path")]
         public string NotebookPath { get; set; }
 
         /// <summary>
@@ -16,38 +16,38 @@ namespace Microsoft.Azure.Databricks.Client
         /// If the notebook takes a parameter that is not specified in the job’s base_parameters or the run-now override parameters, the default value from the notebook will be used.
         /// These parameters can be retrieved in a notebook by using dbutils.widgets.get().
         /// </summary>
-        [JsonProperty(PropertyName = "base_parameters")]
+        [JsonPropertyName("base_parameters")]
         public Dictionary<string, string> BaseParameters { get; set; }
     }
 
-    public class SparkJarTask
+    public record SparkJarTask
     {
         /// <summary>
         /// The full name of the class containing the main method to be executed. This class must be contained in a JAR provided as a library.
         /// Note that the code should use SparkContext.getOrCreate to obtain a Spark context; otherwise, runs of the job will fail.
         /// </summary>
-        [JsonProperty(PropertyName = "main_class_name")]
+        [JsonPropertyName("main_class_name")]
         public string MainClassName { get; set; }
 
         /// <summary>
         /// Parameters that will be passed to the main method.
         /// </summary>
-        [JsonProperty(PropertyName = "parameters")]
+        [JsonPropertyName("parameters")]
         public List<string> Parameters { get; set; }
     }
 
-    public class SparkPythonTask
+    public record SparkPythonTask
     {
         /// <summary>
         /// The URI of the Python file to be executed. DBFS and S3 paths are supported. This field is required.
         /// </summary>
-        [JsonProperty(PropertyName = "python_file")]
+        [JsonPropertyName("python_file")]
         public string PythonFile { get; set; }
 
         /// <summary>
         /// Command line parameters that will be passed to the Python file.
         /// </summary>
-        [JsonProperty(PropertyName = "parameters")]
+        [JsonPropertyName("parameters")]
         public List<string> Parameters { get; set; }
     }
 
@@ -72,12 +72,12 @@ namespace Microsoft.Azure.Databricks.Client
     ///     }
     /// </c>
     /// </example>
-    public class SparkSubmitTask
+    public record SparkSubmitTask
     {
         /// <summary>
         /// Command line parameters that will be passed to spark submit.
         /// </summary>
-        [JsonProperty(PropertyName = "parameters")]
+        [JsonPropertyName("parameters")]
         public List<string> Parameters { get; set; }
     }
 }

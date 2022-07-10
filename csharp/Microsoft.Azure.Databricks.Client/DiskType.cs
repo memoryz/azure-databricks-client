@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
@@ -29,24 +28,22 @@ namespace Microsoft.Azure.Databricks.Client
         THROUGHPUT_OPTIMIZED_HDD
     }
 
-    public class DiskType
+    public record DiskType
     {
         /// <summary>
         /// The EBS volume type to use.
         /// </summary>
-        [JsonProperty(PropertyName = "ebs_volume_type")]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonPropertyName("ebs_volume_type")]
         public EbsVolumeType? EbsVolumeType { get; set; }
 
         /// <summary>
         /// The type of Azure Disk to use.
         /// </summary>
-        [JsonProperty(PropertyName = "azure_disk_volume_type")]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonPropertyName("azure_disk_volume_type")]
         public AzureDiskVolumeType? AzureDiskVolumeType { get; set; }
 
-        public static DiskType FromAzureDisk(AzureDiskVolumeType volumeType) => new DiskType {AzureDiskVolumeType = volumeType};
+        public static DiskType FromAzureDisk(AzureDiskVolumeType volumeType) => new() { AzureDiskVolumeType = volumeType };
 
-        public static DiskType FromEbsDisk(EbsVolumeType volumeType) => new DiskType {EbsVolumeType = volumeType};
+        public static DiskType FromEbsDisk(EbsVolumeType volumeType) => new() { EbsVolumeType = volumeType };
     }
 }

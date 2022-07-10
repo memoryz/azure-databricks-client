@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
@@ -7,7 +7,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// <summary>
         /// The canonical identifier for this job.
         /// </summary>
-        [JsonProperty(PropertyName = "job_id")]
+        [JsonPropertyName("job_id")]
         public long JobId { get; set; }
     }
 }

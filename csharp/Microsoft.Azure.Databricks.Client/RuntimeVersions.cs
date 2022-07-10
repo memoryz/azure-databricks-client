@@ -4,13 +4,6 @@ namespace Microsoft.Azure.Databricks.Client
 {
     public class RuntimeVersions
     {
-        #region 6.4 ESR
-        /// <summary>
-        /// 6.4 Extended Support (includes Apache Spark 2.4.5, Scala 2.11)
-        /// </summary>
-        public const string Runtime_6_4_ESR = "6.4.x-esr-scala2.11";
-        #endregion
-
         #region 7.3 LTS
         /// <summary>
         /// 7.3 LTS (includes Apache Spark 3.0.1, Scala 2.12)
@@ -177,16 +170,27 @@ namespace Microsoft.Azure.Databricks.Client
 
         #endregion
 
-        #region light 2.4
-        /// <summary>
-        /// Light 2.4 (includes Apache Spark 2.4, Scala 2.11)
-        /// </summary>
-        public const string Runtime_Light_2_4 = "apache-spark-2.4.x-scala2.11";
+        #region 11.0
 
         /// <summary>
-        /// Light 2.4 Extended Support (includes Apache Spark 2.4, Scala 2.11)
+        /// 11.0 (includes Apache Spark 3.3.0, Scala 2.12)
         /// </summary>
-        public const string Runtime_Light_2_4_ESR = "apache-spark-2.4.x-esr-scala2.11";
+        public const string Runtime_11_0 = "11.0.x-scala2.12";
+
+        /// <summary>
+        /// 11.0 ML (includes Apache Spark 3.3.0, Scala 2.12)
+        /// </summary>
+        public const string Runtime_11_0_CPU_ML = "11.0.x-cpu-ml-scala2.12";
+
+        /// <summary>
+        /// 11.0 ML (includes Apache Spark 3.3.0, GPU, Scala 2.12)
+        /// </summary>
+        public const string Runtime_11_0_GPU_ML = "11.0.x-gpu-ml-scala2.12";
+
+        /// <summary>
+        /// 11.0 Photon (includes Apache Spark 3.3.0, Scala 2.12)
+        /// </summary>
+        public const string Runtime_11_0_PHOTON = "11.0.x-photon-scala2.12";
 
         #endregion
     }

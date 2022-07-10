@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
@@ -8,13 +8,13 @@ namespace Microsoft.Azure.Databricks.Client
         /// <summary>
         /// This list of matching events.
         /// </summary>
-        [JsonProperty(PropertyName = "events")]
+        [JsonPropertyName("events")]
         public IEnumerable<ClusterEvent> Events { get; set; }
 
         /// <summary>
         /// The parameters required to retrieve the next page of events. Omitted if there are no more events to read.
         /// </summary>
-        [JsonProperty(PropertyName = "next_page")]
+        [JsonPropertyName("next_page")]
         public EventsRequest NextPage { get; set; }
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// <summary>
         /// The total number of events filtered by the start_time, end_time, and event_types.
         /// </summary>
-        [JsonProperty(PropertyName = "total_count")]
+        [JsonPropertyName("total_count")]
         public long TotalCount { get; set; }
     }
 }

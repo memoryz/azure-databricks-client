@@ -1,13 +1,14 @@
-﻿using Newtonsoft.Json;
+﻿
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class ClusterLogConf
+    public record ClusterLogConf
     {
         /// <summary>
         /// For dbfs, destination must be provided. For example, { "dbfs" : { "destination" : "dbfs:/home/cluster_log" } }
         /// </summary>
-        [JsonProperty(PropertyName = "dbfs")]
+        [JsonPropertyName("dbfs")]
         public DbfsStorageInfo Dbfs { get; set; }
     }
 }

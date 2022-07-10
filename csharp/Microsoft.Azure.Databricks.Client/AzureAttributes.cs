@@ -1,15 +1,13 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class InstancePoolAzureAttributes
+    public record InstancePoolAzureAttributes
     {
         /// <summary>
         /// Availability type used for all subsequent nodes past the `first_on_demand` ones.
         /// </summary>
-        [JsonProperty(PropertyName = "availability")]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonPropertyName("availability")]
         public AzureAvailability? Availability { get; set; }
 
         /// <summary>
@@ -18,11 +16,11 @@ namespace Microsoft.Azure.Databricks.Client
         /// The price for the instance will be the current price for spot instances or the price for a standard instance.
         /// You can view historical pricing and eviction rates in the Azure portal.
         /// </summary>
-        [JsonProperty(PropertyName = "spot_bid_max_price")]
+        [JsonPropertyName("spot_bid_max_price")]
         public double SpotBidMaxPrice { get; set; }
     }
 
-    public class AzureAttributes: InstancePoolAzureAttributes
+    public record AzureAttributes : InstancePoolAzureAttributes
     {
         /// <summary>
         /// The first `first_on_demand` nodes of the cluster will be placed on on-demand instances.
@@ -31,7 +29,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// If this value is less than the current cluster size, `first_on_demand` nodes will be placed on on-demand instances and the remainder will be placed on availability instances.
         /// This value does not affect cluster size and cannot be mutated over the lifetime of a cluster.
         /// </summary>
-        [JsonProperty(PropertyName = "first_on_demand")]
+        [JsonPropertyName("first_on_demand")]
         public int FirstOnDemand { get; set; }
     }
 

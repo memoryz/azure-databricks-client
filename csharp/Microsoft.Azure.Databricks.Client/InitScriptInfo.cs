@@ -1,13 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿
+
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class InitScriptInfo
+    public record InitScriptInfo
     {
         /// <summary>
         /// DBFS location of init script. destination must be provided.
         /// </summary>
-        [JsonProperty(PropertyName = "dbfs")]
+        [JsonPropertyName("dbfs")]
         public DbfsStorageInfo Dbfs { get; set; }
     }
 }

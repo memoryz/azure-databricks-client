@@ -1,21 +1,20 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class SecretMetadata
+    public record SecretMetadata
     {
         /// <summary>
         /// A unique name to identify the secret.
         /// </summary>
-        [JsonProperty(PropertyName = "key")]
+        [JsonPropertyName("key")]
         public string Key { get; set; }
 
         /// <summary>
         /// The last updated timestamp (in milliseconds) for the secret.
         /// </summary>
-        [JsonProperty(PropertyName = "last_updated_timestamp")]
-        [JsonConverter(typeof(MillisecondEpochDateTimeConverter))]
+        [JsonPropertyName("last_updated_timestamp")]
         public DateTimeOffset LastUpdatedTimestamp { get; set; }
     }
 }

@@ -1,12 +1,13 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿
 using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
     public class TerminationReason
     {
-        [JsonProperty(PropertyName = "code")]
+        [JsonPropertyName("code")]
         public string TerminationCodeText { get; set; }
 
         /// <summary>
@@ -26,7 +27,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// <summary>
         /// List of parameters that provide additional information about why the cluster was terminated.
         /// </summary>
-        [JsonProperty(PropertyName = "parameters")]
-        public JObject Parameters { get; set; }
+        [JsonPropertyName("parameters")]
+        public Dictionary<string, string> Parameters { get; set; }
     }
 }

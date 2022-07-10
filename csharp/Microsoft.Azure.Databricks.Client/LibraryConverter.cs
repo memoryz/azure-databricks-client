@@ -1,64 +1,53 @@
 ﻿using System;
-using System.Reflection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class LibraryConverter : JsonConverter
+    public class LibraryConverter : JsonConverter<Library>
     {
-        /// <inheritdoc />
-        public override bool CanWrite => false;
+        public override bool HandleNull => true;
 
-
-        /// <inheritdoc />
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override Library Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue,
-            JsonSerializer serializer)
-        {
-            JObject library = JObject.Load(reader);
-
-            if (library.ContainsKey("jar"))
+            var library = JsonDocument.ParseValue(ref reader).RootElement;
+            if (library.TryGetProperty("jar", out var jar))
             {
-                return library.ToObject<JarLibrary>();
+                return jar.Deserialize<JarLibrary>();
             }
 
-            if (library.ContainsKey("egg"))
+            if (library.TryGetProperty("egg", out var egg))
             {
-                return library.ToObject<EggLibrary>();
+                return egg.Deserialize<EggLibrary>();
             }
 
-            if (library.ContainsKey("whl"))
+            if (library.TryGetProperty("whl", out var whl))
             {
-                return library.ToObject<WheelLibrary>();
+                return whl.Deserialize<WheelLibrary>();
             }
 
-            if (library.ContainsKey("maven"))
+            if (library.TryGetProperty("maven", out var maven))
             {
-                return library.ToObject<MavenLibrary>();
+                return maven.Deserialize<MavenLibrary>();
             }
 
-            if (library.ContainsKey("pypi"))
+            if (library.TryGetProperty("pypi", out var pypi))
             {
-                return library.ToObject<PythonPyPiLibrary>();
+                return pypi.Deserialize<PythonPyPiLibrary>();
             }
 
-            if (library.ContainsKey("cran"))
+            if (library.TryGetProperty("cran", out var cran))
             {
-                return library.ToObject<RCranLibrary>();
+                return cran.Deserialize<RCranLibrary>();
             }
 
             throw new NotSupportedException("Library not recognized");
+
         }
 
-        public override bool CanConvert(Type objectType)
+        public override void Write(Utf8JsonWriter writer, Library value, JsonSerializerOptions options)
         {
-            return typeof(Library).GetTypeInfo().IsAssignableFrom(objectType);
+            throw new NotImplementedException();
         }
     }
 }

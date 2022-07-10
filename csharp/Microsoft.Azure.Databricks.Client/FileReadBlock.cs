@@ -1,19 +1,19 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class FileReadBlock
+    public record FileReadBlock
     {
         /// <summary>
         /// The number of bytes read (could be less than length if we hit end of file). This refers to number of bytes read in unencoded version (response data is base64-encoded).
         /// </summary>
-        [JsonProperty(PropertyName = "bytes_read")]
+        [JsonPropertyName("bytes_read")]
         public long BytesRead { get; set; }
 
         /// <summary>
         /// The base64-encoded contents of the file read.
         /// </summary>
-        [JsonProperty(PropertyName = "data")]
+        [JsonPropertyName("data")]
         public byte[] Data { get; set; }
     }
 }

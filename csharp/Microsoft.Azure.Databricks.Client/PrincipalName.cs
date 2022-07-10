@@ -1,19 +1,19 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class PrincipalName
+    public record PrincipalName
     {
         /// <summary>
         /// The user name.
         /// </summary>
-        [JsonProperty(PropertyName = "user_name")]
+        [JsonPropertyName("user_name")]
         public string UserName { get; set; }
 
         /// <summary>
         /// The group name.
         /// </summary>
-        [JsonProperty(PropertyName = "group_name")]
+        [JsonPropertyName("group_name")]
         public string GroupName { get; set; }
     }
 }

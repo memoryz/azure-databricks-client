@@ -1,49 +1,28 @@
 ﻿using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
-    public class MillisecondEpochDateTimeConverter : DateTimeConverterBase
+    public class MillisecondEpochDateTimeConverter : JsonConverter<DateTimeOffset?>
     {
-        internal static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        public override bool HandleNull => true;
 
-        /// <inheritdoc />
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override DateTimeOffset? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            long ms;
-
-            switch (value)
+            if (reader.TryGetInt64(out var time))
             {
-                case DateTime dateTime:
-                    ms = (long)(dateTime.ToUniversalTime() - UnixEpoch).TotalMilliseconds;
-                    break;
-                case DateTimeOffset dateTimeOffset:
-                    ms = (long)(dateTimeOffset.ToUniversalTime() - UnixEpoch).TotalMilliseconds;
-                    break;
-                default:
-                    throw new JsonSerializationException("Expected date object value.");
+                return DateTimeOffset.FromUnixTimeMilliseconds(time).LocalDateTime;
             }
 
-            writer.WriteValue(ms);
+            return null;
         }
 
-        /// <inheritdoc />
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, DateTimeOffset? value, JsonSerializerOptions options)
         {
-            if (reader.Value == null)
-            {
-                return null;
-            }
-
-            var time = UnixEpoch.AddMilliseconds((long)reader.Value);
-
-            if (objectType == typeof(DateTimeOffset) || objectType == typeof(DateTimeOffset?))
-            {
-                return new DateTimeOffset(time, TimeSpan.Zero);
-            }
-
-            return time;
+            value.ForEach(
+                dt => writer.WriteNumberValue(dt.ToUnixTimeMilliseconds())
+            );
         }
     }
 }

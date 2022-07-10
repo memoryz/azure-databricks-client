@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
@@ -11,20 +10,19 @@ namespace Microsoft.Azure.Databricks.Client
         /// <summary>
         /// Content of the view
         /// </summary>
-        [JsonProperty(PropertyName = "content")]
+        [JsonPropertyName("content")]
         public string Content { get; set; }
 
         /// <summary>
         /// Name of the view item. In the case of code view, it would be the notebook's name. In the case of dashboard view, it would be the dashboard's name.
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Type of the view item (e.g., NOTEBOOK, DASHBOARD)
         /// </summary>
-        [JsonProperty(PropertyName = "type")]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonPropertyName("type")]
         public ViewType Type { get; set; }
     }
 }

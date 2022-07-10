@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client
 {
@@ -10,25 +10,25 @@ namespace Microsoft.Azure.Databricks.Client
         /// <summary>
         /// Number of active instances that are in use by a cluster.
         /// </summary>
-        [JsonProperty(PropertyName = "used_count")]
+        [JsonPropertyName("used_count")]
         public int UsedCount { get; set; }
 
         /// <summary>
         /// Number of active instances that are not in use by a cluster.
         /// </summary>
-        [JsonProperty(PropertyName = "idle_count")]
+        [JsonPropertyName("idle_count")]
         public int IdleCount { get; set; }
 
         /// <summary>
         /// Number of pending instances that are assigned to a cluster.
         /// </summary>
-        [JsonProperty(PropertyName = "pending_used_count")]
+        [JsonPropertyName("pending_used_count")]
         public int PendingUsedCount { get; set; }
 
         /// <summary>
         /// Number of pending instances that are not assigned to a cluster.
         /// </summary>
-        [JsonProperty(PropertyName = "pending_idle_count")]
+        [JsonPropertyName("pending_idle_count")]
         public int PendingIdleCount { get; set; }
 
     }
