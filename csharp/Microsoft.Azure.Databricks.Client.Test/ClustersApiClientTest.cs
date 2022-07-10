@@ -1,4 +1,5 @@
 
+using Microsoft.Azure.Databricks.Client.Models;
 using Moq;
 using Moq.Contrib.HttpClient;
 using System.Net;

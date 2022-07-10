@@ -1,5 +1,6 @@
 ﻿// ReSharper disable InconsistentNaming
-namespace Microsoft.Azure.Databricks.Client
+
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     public enum LibraryInstallStatus
     {

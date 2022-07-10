@@ -1,7 +1,6 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     /// <summary>
     /// An organizational resource for storing secrets. Secret scopes can be different types, and ACLs can be applied to control permissions for all secrets within a scope.

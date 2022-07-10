@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     /// <summary>
     /// Settings for a job. These settings can be updated using the resetJob method.
@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// <returns></returns>
         public JobSettings WithSchedule(CronSchedule cronSchedule)
         {
-            this.Schedule = cronSchedule;
+            Schedule = cronSchedule;
             return this;
         }
 

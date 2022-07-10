@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     public enum ClusterMode
     {
@@ -166,15 +166,15 @@ namespace Microsoft.Azure.Databricks.Client
 
         public ClusterInfo WithAutoScale(int minWorkers, int maxWorkers)
         {
-            this.AutoScale = new AutoScale { MinWorkers = minWorkers, MaxWorkers = maxWorkers };
-            this.NumberOfWorkers = null;
+            AutoScale = new AutoScale { MinWorkers = minWorkers, MaxWorkers = maxWorkers };
+            NumberOfWorkers = null;
             return this;
         }
 
         public ClusterInfo WithNumberOfWorkers(int numWorkers)
         {
-            this.NumberOfWorkers = numWorkers;
-            this.AutoScale = null;
+            NumberOfWorkers = numWorkers;
+            AutoScale = null;
             return this;
         }
 
@@ -190,29 +190,29 @@ namespace Microsoft.Azure.Databricks.Client
         {
             _enableTableAccessControl = enableTableAccessControl;
 
-            if (this.SparkConfiguration == null)
+            if (SparkConfiguration == null)
             {
-                this.SparkConfiguration = new Dictionary<string, string>();
+                SparkConfiguration = new Dictionary<string, string>();
             }
 
             if (enableTableAccessControl)
             {
-                this.SparkConfiguration["spark.databricks.acl.dfAclsEnabled"] = "true";
+                SparkConfiguration["spark.databricks.acl.dfAclsEnabled"] = "true";
             }
             else
             {
-                this.SparkConfiguration.Remove("spark.databricks.acl.dfAclsEnabled");
+                SparkConfiguration.Remove("spark.databricks.acl.dfAclsEnabled");
             }
 
             var allowedReplLang = DatabricksAllowedReplLang(enableTableAccessControl, _clusterMode);
 
             if (string.IsNullOrEmpty(allowedReplLang))
             {
-                this.SparkConfiguration.Remove("spark.databricks.repl.allowedLanguages");
+                SparkConfiguration.Remove("spark.databricks.repl.allowedLanguages");
             }
             else
             {
-                this.SparkConfiguration["spark.databricks.repl.allowedLanguages"] = allowedReplLang;
+                SparkConfiguration["spark.databricks.repl.allowedLanguages"] = allowedReplLang;
             }
 
             return this;
@@ -222,35 +222,35 @@ namespace Microsoft.Azure.Databricks.Client
 
         public ClusterInfo WithClusterMode(ClusterMode clusterMode)
         {
-            this._clusterMode = clusterMode;
+            _clusterMode = clusterMode;
 
-            if (this.CustomTags == null)
+            if (CustomTags == null)
             {
-                this.CustomTags = new Dictionary<string, string>();
+                CustomTags = new Dictionary<string, string>();
             }
 
-            if (this.SparkConfiguration == null)
+            if (SparkConfiguration == null)
             {
-                this.SparkConfiguration = new Dictionary<string, string>();
+                SparkConfiguration = new Dictionary<string, string>();
             }
 
             switch (clusterMode)
             {
                 case ClusterMode.HighConcurrency:
-                    this.CustomTags["ResourceClass"] = "Serverless";
-                    this.SparkConfiguration["spark.databricks.cluster.profile"] = "serverless";
-                    this.SparkConfiguration.Remove("spark.master");
+                    CustomTags["ResourceClass"] = "Serverless";
+                    SparkConfiguration["spark.databricks.cluster.profile"] = "serverless";
+                    SparkConfiguration.Remove("spark.master");
                     break;
                 case ClusterMode.SingleNode:
-                    this.CustomTags["ResourceClass"] = "SingleNode";
-                    this.SparkConfiguration["spark.databricks.cluster.profile"] = "singleNode";
-                    this.SparkConfiguration["spark.master"] = "local[*]";
-                    this.NumberOfWorkers = 0;
+                    CustomTags["ResourceClass"] = "SingleNode";
+                    SparkConfiguration["spark.databricks.cluster.profile"] = "singleNode";
+                    SparkConfiguration["spark.master"] = "local[*]";
+                    NumberOfWorkers = 0;
                     break;
                 default: // Standard mode
-                    this.CustomTags.Remove("ResourceClass");
-                    this.SparkConfiguration.Remove("spark.databricks.cluster.profile");
-                    this.SparkConfiguration.Remove("spark.master");
+                    CustomTags.Remove("ResourceClass");
+                    SparkConfiguration.Remove("spark.databricks.cluster.profile");
+                    SparkConfiguration.Remove("spark.master");
                     break;
             }
 
@@ -258,42 +258,53 @@ namespace Microsoft.Azure.Databricks.Client
 
             if (string.IsNullOrEmpty(allowedReplLang))
             {
-                this.SparkConfiguration.Remove("spark.databricks.repl.allowedLanguages");
+                SparkConfiguration.Remove("spark.databricks.repl.allowedLanguages");
             }
             else
             {
-                this.SparkConfiguration["spark.databricks.repl.allowedLanguages"] = allowedReplLang;
+                SparkConfiguration["spark.databricks.repl.allowedLanguages"] = allowedReplLang;
             }
 
             return this;
         }
 
-        private static string DatabricksAllowedReplLang(bool enableTableAccessControl, ClusterMode clusterMode) => 
-            enableTableAccessControl ? "python,sql" : (clusterMode == ClusterMode.HighConcurrency ? "sql,python,r" : null);
+        private static string DatabricksAllowedReplLang(bool enableTableAccessControl, ClusterMode clusterMode) =>
+            enableTableAccessControl ? "python,sql" : clusterMode == ClusterMode.HighConcurrency ? "sql,python,r" : null;
 
         public ClusterInfo WithAutoTermination(int? autoTerminationMinutes)
         {
-            this.AutoTerminationMinutes = autoTerminationMinutes.GetValueOrDefault();
+            AutoTerminationMinutes = autoTerminationMinutes.GetValueOrDefault();
             return this;
         }
 
         public ClusterInfo WithRuntimeVersion(string runtimeVersion)
         {
-            this.RuntimeVersion = runtimeVersion;
+            RuntimeVersion = runtimeVersion;
+            return this;
+        }
+
+        /// <summary>
+        /// This enables Photon engine on AWS Graviton-enabled clusters.
+        /// For Azure Databricks, this setting has no effect. Specify Photon-specific runtimes instead.
+        /// </summary>
+        /// <see cref="https://docs.databricks.com/clusters/graviton.html#databricks-rest-api"/>
+        public ClusterInfo WithRuntimeEngine(RuntimeEngine engine)
+        {
+            RuntimeEngine = engine;
             return this;
         }
 
         public ClusterInfo WithNodeType(string workerNodeType, string driverNodeType = null)
         {
-            this.NodeTypeId = workerNodeType;
-            this.DriverNodeTypeId = driverNodeType;
+            NodeTypeId = workerNodeType;
+            DriverNodeTypeId = driverNodeType;
             return this;
         }
 
         public ClusterInfo WithClusterLogConf(string dbfsDestination)
         {
-            this.ClusterLogConfiguration =
-                new ClusterLogConf {Dbfs = new DbfsStorageInfo {Destination = dbfsDestination}};
+            ClusterLogConfiguration =
+                new ClusterLogConf { Dbfs = new DbfsStorageInfo { Destination = dbfsDestination } };
             return this;
         }
     }

@@ -1,7 +1,6 @@
-﻿
-// ReSharper disable InconsistentNaming
+﻿// ReSharper disable InconsistentNaming
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     /// <summary>
     /// The life cycle state of a run. Allowed state transitions are:

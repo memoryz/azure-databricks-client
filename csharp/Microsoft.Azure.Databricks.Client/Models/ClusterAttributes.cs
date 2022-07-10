@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     public record ClusterAttributes
     {
@@ -127,5 +127,13 @@ namespace Microsoft.Azure.Databricks.Client
         /// </summary>
         [JsonPropertyName("azure_attributes")]
         public AzureAttributes AzureAttributes { get; set; }
+
+        /// <summary>
+        /// The type of runtime engine to use. If not specified, the runtime engine type is inferred based on the spark_version value.Allowed values include:
+        /// * PHOTON: Use the Photon runtime engine type.
+        /// * STANDARD: Use the standard runtime engine type.
+        /// </summary>
+        [JsonPropertyName("runtime_engine")]
+        public RuntimeEngine RuntimeEngine { get; set; }
     }
 }

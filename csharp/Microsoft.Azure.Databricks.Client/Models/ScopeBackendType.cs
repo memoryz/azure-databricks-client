@@ -1,5 +1,6 @@
 ﻿// ReSharper disable InconsistentNaming
-namespace Microsoft.Azure.Databricks.Client
+
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     /// <summary>
     /// The types of secret scope backends in the Secret Manager. Only Databricks backed secret scope is supported.

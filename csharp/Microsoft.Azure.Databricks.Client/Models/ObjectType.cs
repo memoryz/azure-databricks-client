@@ -1,5 +1,6 @@
 ﻿// ReSharper disable InconsistentNaming
-namespace Microsoft.Azure.Databricks.Client
+
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     /// <summary>
     /// The type of the object in workspace.
@@ -20,7 +21,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// Library
         /// </summary>
         LIBRARY,
-        
+
         /// <summary>
         /// MLflow Experiment
         /// </summary>

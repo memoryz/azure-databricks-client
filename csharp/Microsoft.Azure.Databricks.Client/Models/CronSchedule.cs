@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     public record CronSchedule
     {
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// Set when the cron schedule is paused
         /// </summary>
         PAUSED,
-        
+
         /// <summary>
         /// Set when the cron schedule is not paused
         /// </summary>

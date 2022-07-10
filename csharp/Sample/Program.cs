@@ -2,15 +2,31 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Azure.Databricks.Client;
-using Newtonsoft.Json;
+using Microsoft.Azure.Databricks.Client.Converters;
+using Microsoft.Azure.Databricks.Client.Models;
+using Polly;
 
 namespace Sample
 {
     internal class Program
     {
+        private static readonly JsonSerializerOptions options = new()
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+            Converters = {
+                new JsonStringEnumConverter(),
+                new MillisecondEpochDateTimeConverter(),
+                new LibraryConverter(),
+                new SecretScopeConverter()
+            }
+        };
+
         /// <summary>
         /// Must be an existing user in the databricks environment, otherwise you will get a "DIRECTORY_PROTECTED" error.
         /// </summary>
@@ -33,15 +49,15 @@ namespace Sample
             Console.WriteLine("Creating client");
             using (var client = DatabricksClient.CreateClient(baseUrl, token))
             {
-                await WorkspaceApi(client);
-                await LibrariesApi(client);
-                await SecretsApi(client);
-                await TokenApi(client);
-                await GroupsApi(client);
-                await DbfsApi(client);
-                await JobsApi(client);
+                //await WorkspaceApi(client);
+                //await LibrariesApi(client);
+                //await SecretsApi(client);
+                //await TokenApi(client);
+                //await GroupsApi(client);
+                //await DbfsApi(client);
+                //await JobsApi(client);
                 await ClustersApi(client);
-                await InstancePoolApi(client);
+                //await InstancePoolApi(client);
             }
 
             Console.WriteLine("Press enter to exit");
@@ -76,7 +92,7 @@ namespace Sample
             var exportedString = System.Text.Encoding.ASCII.GetString(exported);
             Console.WriteLine("Exported notebook:");
             Console.WriteLine("====================");
-            Console.WriteLine(exportedString.Substring(0, 100) + "...");
+            Console.WriteLine(string.Concat(exportedString.AsSpan(0, 100), "..."));
             Console.WriteLine("====================");
 
             Console.WriteLine("Deleting sample workspace");
@@ -306,6 +322,33 @@ namespace Sample
             await client.Clusters.Delete(clusterId);
         }
 
+        private static async Task WaitForCluster(IClustersApi clusterClient, string clusterId, int pollIntervalSeconds = 15)
+        {
+            var retryPolicy = Policy.Handle<WebException>()
+                .Or<ClientApiException>(e => e.StatusCode == HttpStatusCode.BadGateway)
+                .Or<ClientApiException>(e => e.StatusCode == HttpStatusCode.InternalServerError)
+                .Or<ClientApiException>(e => e.Message.Contains("\"error_code\":\"TEMPORARILY_UNAVAILABLE\""))
+                .Or<TaskCanceledException>(e => !e.CancellationToken.IsCancellationRequested) // web request timeout
+                .OrResult<ClusterInfo>(info => !(info.State == ClusterState.RUNNING || info.State == ClusterState.ERROR || info.State == ClusterState.TERMINATED))
+                .WaitAndRetryForeverAsync(
+                    retryAttempt => TimeSpan.FromSeconds(pollIntervalSeconds),
+                    (delegateResult, timespan) =>
+                    {
+                        if (delegateResult.Exception != null)
+                        {
+                            Console.WriteLine($"[{DateTime.UtcNow:s}] Failed to query cluster info - {delegateResult.Exception}");
+                        }
+                    });
+
+            var result = await retryPolicy.ExecuteAsync(async () =>
+            {
+                var info = await clusterClient.Get(clusterId);
+                Console.WriteLine($"[{DateTime.UtcNow:s}]Cluster:{clusterId}\tState:{info.State}\tMessage:{info.StateMessage}");
+
+                return info;
+            });
+        }
+
         private static async Task ClustersApi(DatabricksClient client)
         {
             Console.WriteLine("Listing node types (take 10)");
@@ -336,25 +379,22 @@ namespace Sample
             var clusterId = await client.Clusters.Create(clusterConfig);
 
             var createdCluster = await client.Clusters.Get(clusterId);
-            var createdClusterConfig = JsonConvert.SerializeObject(createdCluster, Formatting.Indented);
+            Console.WriteLine(JsonSerializer.Serialize(createdCluster, options));
+            await WaitForCluster(client.Clusters, clusterId);
 
-            Console.WriteLine("Created cluster config: ");
-            Console.WriteLine(createdClusterConfig);
+            Console.WriteLine("Deleting cluster {0}", clusterId);
+            await client.Clusters.Delete(clusterId);
 
-            while (true)
-            {
-                var state = await client.Clusters.Get(clusterId);
-
-                Console.WriteLine("[{0:s}] Cluster {1}\tState {2}\tMessage {3}", DateTime.UtcNow, clusterId,
-                    state.State, state.StateMessage);
-
-                if (state.State == ClusterState.RUNNING || state.State == ClusterState.ERROR || state.State == ClusterState.TERMINATED)
-                {
-                    break;
-                }
-
-                await Task.Delay(TimeSpan.FromSeconds(15));
-            }
+            Console.WriteLine("Creating Photon cluster");
+            clusterConfig = ClusterInfo.GetNewClusterConfiguration("Sample cluster")
+                .WithRuntimeVersion(RuntimeVersions.Runtime_10_4_PHOTON)
+                .WithClusterMode(ClusterMode.Standard)
+                .WithNumberOfWorkers(1)
+                .WithNodeType(NodeTypes.Standard_E8s_v3);
+            clusterId = await client.Clusters.Create(clusterConfig);
+            createdCluster = await client.Clusters.Get(clusterId);
+            Console.WriteLine(JsonSerializer.Serialize(createdCluster, options));
+            await WaitForCluster(client.Clusters, clusterId);
             
             Console.WriteLine("Deleting cluster {0}", clusterId);
             await client.Clusters.Delete(clusterId);
@@ -363,7 +403,7 @@ namespace Sample
 
             clusterConfig = ClusterInfo.GetNewClusterConfiguration("Sample cluster")
                 .WithRuntimeVersion(RuntimeVersions.Runtime_10_4)
-                .WithAutoScale(3, 7)
+                .WithAutoScale(1, 3)
                 .WithAutoTermination(30)
                 .WithClusterLogConf("dbfs:/logs/")
                 .WithNodeType(NodeTypes.Standard_D3_v2)
@@ -373,31 +413,14 @@ namespace Sample
             clusterId = await client.Clusters.Create(clusterConfig);
 
             createdCluster = await client.Clusters.Get(clusterId);
-            createdClusterConfig = JsonConvert.SerializeObject(createdCluster, Formatting.Indented);
-
-            Console.WriteLine("Created cluster config: ");
-            Console.WriteLine(createdClusterConfig);
-
-            while (true)
-            {
-                var state = await client.Clusters.Get(clusterId);
-
-                Console.WriteLine("[{0:s}] Cluster {1}\tState {2}\tMessage {3}", DateTime.UtcNow, clusterId,
-                    state.State, state.StateMessage);
-
-                if (state.State == ClusterState.RUNNING || state.State == ClusterState.ERROR || state.State == ClusterState.TERMINATED)
-                {
-                    break;
-                }
-
-                await Task.Delay(TimeSpan.FromSeconds(15));
-            }
-
-            Console.WriteLine("Deleting cluster {0}", clusterId);
-            await client.Clusters.Delete(clusterId);
+            Console.WriteLine(JsonSerializer.Serialize(createdCluster, options));
+            await WaitForCluster(client.Clusters, clusterId);
             
-            Console.WriteLine("Getting all events from a test cluster");
-            const string testClusterId = "0530-210517-viced348";
+            Console.WriteLine($"Terminating cluster {clusterId}");
+            await client.Clusters.Terminate(clusterId);
+            await WaitForCluster(client.Clusters, clusterId, 5);
+            
+            Console.WriteLine($"Getting all events from cluster {clusterId}");
             
             EventsResponse eventsResponse = null;
             var events = new List<ClusterEvent>();
@@ -405,7 +428,7 @@ namespace Sample
             {
                 var nextPage = eventsResponse?.NextPage;
                 eventsResponse = await client.Clusters.Events(
-                    testClusterId, 
+                    clusterId, 
                     nextPage?.StartTime, 
                     nextPage?.EndTime,
                     nextPage?.Order, 
@@ -417,12 +440,15 @@ namespace Sample
 
             } while (eventsResponse.HasNextPage);
 
-            Console.WriteLine("{0} events retrieved from cluster {1}.", events.Count, testClusterId);
+            Console.WriteLine("{0} events retrieved from cluster {1}.", events.Count, clusterId);
             Console.WriteLine("Top 10 events: ");
             foreach (var e in events.Take(10))
             {
                 Console.WriteLine("\t[{0:s}] {1}\t{2}", e.Timestamp, e.Type, e.Details.User);
             }
+
+            Console.WriteLine("Deleting cluster {0}", clusterId);
+            await client.Clusters.Delete(clusterId);
         }
 
         private static async Task GroupsApi(DatabricksClient client)

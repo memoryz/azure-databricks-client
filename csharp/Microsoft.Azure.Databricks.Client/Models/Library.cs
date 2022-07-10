@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     public abstract record Library
     {
-        
+
     }
 
     public record JarLibrary : Library
@@ -115,7 +115,7 @@ namespace Microsoft.Azure.Databricks.Client
     {
         [JsonPropertyName("maven")]
         public MavenLibrarySpec MavenLibrarySpec { get; set; }
-        
+
         public override string ToString()
         {
             return "maven://" + MavenLibrarySpec.Repo + ":" + MavenLibrarySpec.Coordinates;

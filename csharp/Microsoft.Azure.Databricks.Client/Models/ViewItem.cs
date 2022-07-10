@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     /// <summary>
     /// The exported content is in HTML format. We may support other formats in the future. For example, if the view to export is dashboards, one HTML string is returned for every dashboard.

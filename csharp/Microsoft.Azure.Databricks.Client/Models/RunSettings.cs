@@ -1,20 +1,20 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
-    public record RunSettings<T> : ClusterSpec where T:RunSettings<T>
+    public record RunSettings<T> : ClusterSpec where T : RunSettings<T>
     {
         public T WithExistingCluster(string clusterId)
         {
-            this.ExistingClusterId = clusterId;
-            this.NewCluster = null;
+            ExistingClusterId = clusterId;
+            NewCluster = null;
             return (T)this;
         }
 
         public T WithNewCluster(ClusterInfo newClusterConfig)
         {
-            this.NewCluster = newClusterConfig;
-            this.ExistingClusterId = null;
+            NewCluster = newClusterConfig;
+            ExistingClusterId = null;
             return (T)this;
         }
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Azure.Databricks.Client.Models;
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 

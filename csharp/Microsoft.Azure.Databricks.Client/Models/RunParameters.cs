@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     /// <summary>
     /// Parameters for this run. Only one of jar_params, python_params or notebook_params should be specified in the run-now request, depending on the type of job task. Jobs with jar task or python task take a list of position-based parameters, and jobs with notebook tasks take a key value map.
@@ -11,12 +11,12 @@ namespace Microsoft.Azure.Databricks.Client
     {
         public static RunParameters CreateJarParams(IEnumerable<string> jarParams)
         {
-            return new RunParameters {JarParams = jarParams.ToList()};
+            return new RunParameters { JarParams = jarParams.ToList() };
         }
 
         public static RunParameters CreateNotebookParams(IEnumerable<KeyValuePair<string, string>> notebookParams)
         {
-            return new RunParameters {NotebookParams = notebookParams.ToDictionary(x => x.Key, x => x.Value)};
+            return new RunParameters { NotebookParams = notebookParams.ToDictionary(x => x.Key, x => x.Value) };
         }
 
         public static RunParameters CreatePythonParams(IEnumerable<string> pythonParams)

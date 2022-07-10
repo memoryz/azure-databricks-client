@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Azure.Databricks.Client
+namespace Microsoft.Azure.Databricks.Client.Models
 {
     /// <summary>
     /// All the information about a run except for its output. The output can be retrieved separately with the getRunOutput method.
@@ -67,7 +67,7 @@ namespace Microsoft.Azure.Databricks.Client
         /// </summary>
         [JsonPropertyName("start_time")]
         public DateTimeOffset? StartTime { get; set; }
-        
+
         /// <summary>
         /// The time at which this run ended in epoch milliseconds (milliseconds since 1/1/1970 UTC).
         /// </summary>

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.Azure.Databricks.Client
+﻿namespace Microsoft.Azure.Databricks.Client.Models
 {
     /// <summary>
     /// The type of the run.

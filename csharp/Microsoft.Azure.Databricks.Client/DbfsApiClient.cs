@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Text.Json.Nodes;
 using System.Text.Json;
+using Microsoft.Azure.Databricks.Client.Models;
+using FileInfo = Microsoft.Azure.Databricks.Client.Models.FileInfo;
 
 namespace Microsoft.Azure.Databricks.Client
 {
