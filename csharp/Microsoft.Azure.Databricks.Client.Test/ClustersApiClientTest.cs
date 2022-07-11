@@ -114,6 +114,53 @@ namespace Microsoft.Azure.Databricks.Client.Test
         }
 
         [TestMethod]
+        public async Task TestCreateWithIdempotencyToken()
+        {
+            var idempotencyToken = "test_idempotency_token";
+            var apiUri = new Uri(ClusterApiUri, "create");
+            var expectedRequest = """
+            {
+              "cluster_name": "single-node-cluster",
+              "spark_version": "7.3.x-scala2.12",
+              "node_type_id": "Standard_D3_v2",
+              "num_workers": 0,
+              "spark_conf": {
+                "spark.databricks.cluster.profile": "singleNode",
+                "spark.master": "local[*]"
+              },
+              "custom_tags": { "ResourceClass": "SingleNode" },
+              "idempotency_token": "test_idempotency_token"
+            }
+            """;
+            var expectedResponse = new { cluster_id = "1234-567890-pouch123" };
+
+            var handler = CreateMockHandler();
+            handler
+                .SetupRequest(HttpMethod.Post, apiUri)
+                .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, options), "application/json")
+                .Verifiable();
+
+            var hc = handler.CreateClient();
+            hc.BaseAddress = BaseApiUri;
+
+            using var client = new ClustersApiClient(hc);
+            var clusterAttributes = ClusterAttributes.GetNewClusterConfiguration("single-node-cluster")
+                .WithNodeType("Standard_D3_v2")
+                .WithClusterMode(ClusterMode.SingleNode)
+                .WithRuntimeVersion(RuntimeVersions.Runtime_7_3);
+
+            string clusterId = await client.Create(clusterAttributes, idempotencyToken);
+            Assert.AreEqual(expectedResponse.cluster_id, clusterId);
+
+            handler.VerifyRequest(
+                HttpMethod.Post,
+                apiUri,
+                GetMatcher(expectedRequest),
+                Times.Once()
+            );
+        }
+
+        [TestMethod]
         public async Task TestEdit()
         {
             var apiUri = new Uri(ClusterApiUri, "edit");

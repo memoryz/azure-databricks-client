@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// The new cluster.
         /// </value>
         [JsonPropertyName("new_cluster")]
-        public ClusterInfo NewCluster { get; set; }
+        public ClusterAttributes NewCluster { get; set; }
 
         /// <summary>
         /// An optional list of libraries to be installed on the cluster that will execute the job. The default value is an empty list.

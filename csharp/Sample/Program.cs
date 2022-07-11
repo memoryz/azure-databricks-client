@@ -365,16 +365,23 @@ namespace Sample
                 Console.WriteLine($"\t{key}\t\t{name}");
             }
 
+            Console.WriteLine("Listing existing clusters");
+            var clusters = await client.Clusters.List();
+            foreach (var cluster in clusters)
+            {
+                Console.WriteLine($"\t{cluster.ClusterId}\t\t{cluster.ClusterName}");
+            }
+
             Console.WriteLine("Creating standard cluster");
 
-            var clusterConfig = ClusterInfo.GetNewClusterConfiguration("Sample cluster")
+            var clusterConfig = ClusterAttributes
+                .GetNewClusterConfiguration("Sample cluster")
                 .WithRuntimeVersion(RuntimeVersions.Runtime_10_4)
                 .WithAutoTermination(30)
                 .WithClusterLogConf("dbfs:/logs/")
                 .WithNodeType(NodeTypes.Standard_D3_v2)
-                .WithClusterMode(ClusterMode.SingleNode);
-
-            clusterConfig.DockerImage = new DockerImage { Url = "databricksruntime/standard:latest" };
+                .WithClusterMode(ClusterMode.SingleNode)
+                .WithDockerImage("databricksruntime/standard:latest");
 
             var clusterId = await client.Clusters.Create(clusterConfig);
 
@@ -382,15 +389,22 @@ namespace Sample
             Console.WriteLine(JsonSerializer.Serialize(createdCluster, options));
             await WaitForCluster(client.Clusters, clusterId);
 
+            Console.WriteLine($"Editing cluster {clusterId}");
+            createdCluster.CustomTags = new Dictionary<string, string> { { "TestingTagKey", "TestingTagValue" } };
+            await client.Clusters.Edit(clusterId, clusterConfig);
+            await WaitForCluster(client.Clusters, clusterId);
+
             Console.WriteLine("Deleting cluster {0}", clusterId);
             await client.Clusters.Delete(clusterId);
 
             Console.WriteLine("Creating Photon cluster");
-            clusterConfig = ClusterInfo.GetNewClusterConfiguration("Sample cluster")
+            clusterConfig = ClusterAttributes
+                .GetNewClusterConfiguration("Sample cluster")
                 .WithRuntimeVersion(RuntimeVersions.Runtime_10_4_PHOTON)
                 .WithClusterMode(ClusterMode.Standard)
                 .WithNumberOfWorkers(1)
                 .WithNodeType(NodeTypes.Standard_E8s_v3);
+
             clusterId = await client.Clusters.Create(clusterConfig);
             createdCluster = await client.Clusters.Get(clusterId);
             Console.WriteLine(JsonSerializer.Serialize(createdCluster, options));
@@ -401,7 +415,8 @@ namespace Sample
 
             Console.WriteLine("Creating HighConcurrency cluster");
 
-            clusterConfig = ClusterInfo.GetNewClusterConfiguration("Sample cluster")
+            clusterConfig = ClusterAttributes
+                .GetNewClusterConfiguration("Sample cluster")
                 .WithRuntimeVersion(RuntimeVersions.Runtime_10_4)
                 .WithAutoScale(1, 3)
                 .WithAutoTermination(30)

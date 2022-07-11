@@ -1,9 +1,28 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client.Models
 {
-    public record ClusterAttributes
+    public enum ClusterMode
+    {
+        /// <summary>
+        /// The standard cluster mode. Recommended for single-user clusters. Can run SQL, Python, R, and Scala workloads.
+        /// </summary>
+        Standard,
+
+        /// <summary>
+        /// High concurrency cluster mode. Optimized to run concurrent SQL, Python, and R workloads. Does not support Scala. Previously known as Serverless. <see href="https://docs.microsoft.com/en-us/azure/databricks/clusters/configure#high-concurrency"/>
+        /// </summary>
+        HighConcurrency,
+
+        /// <summary>
+        /// A Single Node cluster is a cluster consisting of a Spark driver and no Spark workers. <see href="https://docs.microsoft.com/en-us/azure/databricks/clusters/single-node"/>
+        /// </summary>
+        SingleNode
+    }
+
+    public record ClusterAttributes: ClusterSize
     {
         /// <summary>
         /// Cluster name requested by the user. This doesn’t have to be unique. If not specified at creation, the cluster name will be an empty string.
@@ -87,16 +106,16 @@ namespace Microsoft.Azure.Databricks.Client.Models
         public bool EnableElasticDisk { get; set; }
 
         /// <summary>
-        /// Determines whether the cluster was created by a user through the UI, by the Databricks Jobs Scheduler, or through an API request.
-        /// </summary>
-        [JsonPropertyName("cluster_source")]
-        public ClusterSource? ClusterSource { get; set; }
-
-        /// <summary>
         /// The optional ID of the instance pool to which the cluster belongs. Refer to Pools for details.
         /// </summary>
         [JsonPropertyName("instance_pool_id")]
         public string InstancePoolId { get; set; }
+
+        /// <summary>
+        /// The ID of the instance pool to use for drivers. You must also specify instance_pool_id. Refer to Instance Pools API 2.0 for details.
+        /// </summary>
+        [JsonPropertyName("driver_instance_pool_id")]
+        public string DriverInstancePoolId { get; set; }
 
         /// <summary>
         /// Docker image for a custom container.
@@ -120,7 +139,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// Whether to use policy default values for missing cluster attributes. Default value: false.
         /// </summary>
         [JsonPropertyName("apply_policy_default_values")]
-        public bool ApplyPolicyDefaultValues { get; set; }
+        public bool? ApplyPolicyDefaultValues { get; set; }
 
         /// <summary>
         /// Defines attributes such as the instance availability type, node placement, and max bid price. If not specified during cluster creation, a set of default values is used.
@@ -135,5 +154,189 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// </summary>
         [JsonPropertyName("runtime_engine")]
         public RuntimeEngine RuntimeEngine { get; set; }
+
+        public static ClusterInfo GetNewClusterConfiguration(string clusterName = null)
+        {
+            return new ClusterInfo
+            {
+                ClusterName = clusterName
+            };
+        }
+
+        public ClusterAttributes WithAutoScale(int minWorkers, int maxWorkers)
+        {
+            AutoScale = new AutoScale { MinWorkers = minWorkers, MaxWorkers = maxWorkers };
+            NumberOfWorkers = null;
+            return this;
+        }
+
+        public ClusterAttributes WithNumberOfWorkers(int numWorkers)
+        {
+            NumberOfWorkers = numWorkers;
+            AutoScale = null;
+            return this;
+        }
+
+        private static string DatabricksAllowedReplLang(bool enableTableAccessControl, ClusterMode clusterMode) =>
+            enableTableAccessControl ? "python,sql" : clusterMode == ClusterMode.HighConcurrency ? "sql,python,r" : null;
+
+        /// <summary>
+        /// When enabled:
+        ///     Allows users to run SQL, Python, and PySpark commands. Users are restricted to the SparkSQL API and DataFrame API, and therefore cannot use Scala, R, RDD APIs, or clients that directly read the data from cloud storage, such as DBUtils.
+        ///     Cannot acquire direct access to data in the cloud via DBFS or by reading credentials from the cloud provider’s metadata service.
+        ///     Requires that clusters run Databricks Runtime 3.5 or above.
+        ///     Must run their commands on cluster nodes as a low-privilege user forbidden from accessing sensitive parts of the filesystem or creating network connections to ports other than 80 and 443.
+        /// </summary>
+        private bool _enableTableAccessControl;
+        public ClusterAttributes WithTableAccessControl(bool enableTableAccessControl)
+        {
+            _enableTableAccessControl = enableTableAccessControl;
+
+            if (SparkConfiguration == null)
+            {
+                SparkConfiguration = new Dictionary<string, string>();
+            }
+
+            if (enableTableAccessControl)
+            {
+                SparkConfiguration["spark.databricks.acl.dfAclsEnabled"] = "true";
+            }
+            else
+            {
+                SparkConfiguration.Remove("spark.databricks.acl.dfAclsEnabled");
+            }
+
+            var allowedReplLang = DatabricksAllowedReplLang(enableTableAccessControl, _clusterMode);
+
+            if (string.IsNullOrEmpty(allowedReplLang))
+            {
+                SparkConfiguration.Remove("spark.databricks.repl.allowedLanguages");
+            }
+            else
+            {
+                SparkConfiguration["spark.databricks.repl.allowedLanguages"] = allowedReplLang;
+            }
+
+            return this;
+        }
+
+        private ClusterMode _clusterMode = ClusterMode.Standard;
+
+        public ClusterAttributes WithClusterMode(ClusterMode clusterMode)
+        {
+            _clusterMode = clusterMode;
+
+            if (CustomTags == null)
+            {
+                CustomTags = new Dictionary<string, string>();
+            }
+
+            if (SparkConfiguration == null)
+            {
+                SparkConfiguration = new Dictionary<string, string>();
+            }
+
+            switch (clusterMode)
+            {
+                case ClusterMode.HighConcurrency:
+                    CustomTags["ResourceClass"] = "Serverless";
+                    SparkConfiguration["spark.databricks.cluster.profile"] = "serverless";
+                    SparkConfiguration.Remove("spark.master");
+                    break;
+                case ClusterMode.SingleNode:
+                    CustomTags["ResourceClass"] = "SingleNode";
+                    SparkConfiguration["spark.databricks.cluster.profile"] = "singleNode";
+                    SparkConfiguration["spark.master"] = "local[*]";
+                    NumberOfWorkers = 0;
+                    break;
+                default: // Standard mode
+                    CustomTags.Remove("ResourceClass");
+                    SparkConfiguration.Remove("spark.databricks.cluster.profile");
+                    SparkConfiguration.Remove("spark.master");
+                    break;
+            }
+
+            var allowedReplLang = DatabricksAllowedReplLang(_enableTableAccessControl, clusterMode);
+
+            if (string.IsNullOrEmpty(allowedReplLang))
+            {
+                SparkConfiguration.Remove("spark.databricks.repl.allowedLanguages");
+            }
+            else
+            {
+                SparkConfiguration["spark.databricks.repl.allowedLanguages"] = allowedReplLang;
+            }
+
+            return this;
+        }
+        public ClusterAttributes WithAutoTermination(int? autoTerminationMinutes)
+        {
+            AutoTerminationMinutes = autoTerminationMinutes.GetValueOrDefault();
+            return this;
+        }
+
+        public ClusterAttributes WithRuntimeVersion(string runtimeVersion)
+        {
+            RuntimeVersion = runtimeVersion;
+            return this;
+        }
+
+        /// <summary>
+        /// This enables Photon engine on AWS Graviton-enabled clusters.
+        /// For Azure Databricks, this setting has no effect. Specify Photon-specific runtimes instead.
+        /// </summary>
+        /// <see cref="https://docs.databricks.com/clusters/graviton.html#databricks-rest-api"/>
+        public ClusterAttributes WithRuntimeEngine(RuntimeEngine engine)
+        {
+            RuntimeEngine = engine;
+            return this;
+        }
+
+        public ClusterAttributes WithNodeType(string workerNodeType, string driverNodeType = null)
+        {
+            NodeTypeId = workerNodeType;
+            DriverNodeTypeId = driverNodeType;
+            return this;
+        }
+
+        public ClusterAttributes WithClusterLogConf(string dbfsDestination)
+        {
+            ClusterLogConfiguration =
+                new ClusterLogConf { Dbfs = new DbfsStorageInfo { Destination = dbfsDestination } };
+            return this;
+        }
+
+        public ClusterAttributes WithInstancePool(string instancePoolId, string driverInstancePoolId)
+        {
+            InstancePoolId = instancePoolId;
+            DriverInstancePoolId = driverInstancePoolId;
+            return this;
+        }
+
+        public ClusterAttributes WithInstancePool(string instancePoolId)
+        {
+            return WithInstancePool(instancePoolId, instancePoolId);
+        }
+
+        public ClusterAttributes WithPolicyId(string policyId, bool applyPolicyDefaultValues = true)
+        {
+            PolicyId = policyId;
+            ApplyPolicyDefaultValues = applyPolicyDefaultValues;
+            return this;
+        }
+
+        public ClusterAttributes WithDockerImage(string url, (string, string)? basicAuth = default)
+        {
+            if (basicAuth == null)
+            {
+                DockerImage = new DockerImage { Url = url };
+            }
+            else
+            {
+                DockerImage = new DockerImage { Url = url, BasicAuth = new DockerBasicAuth { UserName = basicAuth.Value.Item1, Password = basicAuth.Value.Item2 } };
+            }
+
+            return this;
+        }
     }
 }

@@ -4,38 +4,12 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client.Models
 {
-    public enum ClusterMode
-    {
-        /// <summary>
-        /// The standard cluster mode. Recommended for single-user clusters. Can run SQL, Python, R, and Scala workloads.
-        /// </summary>
-        Standard,
-
-        /// <summary>
-        /// High concurrency cluster mode. Optimized to run concurrent SQL, Python, and R workloads. Does not support Scala. Previously known as Serverless. <see href="https://docs.microsoft.com/en-us/azure/databricks/clusters/configure#high-concurrency"/>
-        /// </summary>
-        HighConcurrency,
-
-        /// <summary>
-        /// A Single Node cluster is a cluster consisting of a Spark driver and no Spark workers. <see href="https://docs.microsoft.com/en-us/azure/databricks/clusters/single-node"/>
-        /// </summary>
-        SingleNode
-    }
-
     /// <summary>
     /// Describes all of the metadata about a single Spark cluster in Databricks.
     /// </summary>
     /// <seealso cref="T:Microsoft.Azure.Databricks.DatabricksClient.ClusterInstance" />
     public record ClusterInfo : ClusterAttributes
     {
-        public static ClusterInfo GetNewClusterConfiguration(string clusterName = null)
-        {
-            return new ClusterInfo
-            {
-                ClusterName = clusterName
-            };
-        }
-
         /// <summary>
         /// The canonical identifier for the cluster used by a run. This field is always available for runs on existing clusters. For runs on new clusters, it becomes available once the cluster is created. This value can be used to view logs by browsing to /#setting/sparkui/$cluster_id/driver-logs. The logs will continue to be available after the run completes.
         /// If this identifier is not yet available, the response won’t include this field.
@@ -49,22 +23,6 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// </summary>
         [JsonPropertyName("spark_context_id")]
         public long SparkContextId { get; set; }
-
-        /// <summary>
-        /// Number of worker nodes that this cluster should have. A cluster has one Spark Driver and num_workers Executors for a total of num_workers + 1 Spark nodes.
-        /// </summary>
-        /// <remarks>
-        /// Note: When reading the properties of a cluster, this field reflects the desired number of workers rather than the actual current number of workers.
-        /// For instance, if a cluster is resized from 5 to 10 workers, this field will immediately be updated to reflect the target size of 10 workers, whereas the workers listed in spark_info will gradually increase from 5 to 10 as the new nodes are provisioned.
-        /// </remarks>
-        [JsonPropertyName("num_workers")]
-        public int? NumberOfWorkers { get; set; }
-
-        /// <summary>
-        /// Parameters needed in order to automatically scale clusters up and down based on load.Note: autoscaling works best with DB runtime versions 3.0 or later.
-        /// </summary>
-        [JsonPropertyName("autoscale")]
-        public AutoScale AutoScale { get; set; }
 
         /// <summary>
         /// Creator user name. The field won’t be included in the response if the user has already been deleted.
@@ -164,148 +122,13 @@ namespace Microsoft.Azure.Databricks.Client.Models
         [JsonPropertyName("pinned_by_user_name")]
         public string PinnedByUserName { get; set; }
 
-        public ClusterInfo WithAutoScale(int minWorkers, int maxWorkers)
-        {
-            AutoScale = new AutoScale { MinWorkers = minWorkers, MaxWorkers = maxWorkers };
-            NumberOfWorkers = null;
-            return this;
-        }
-
-        public ClusterInfo WithNumberOfWorkers(int numWorkers)
-        {
-            NumberOfWorkers = numWorkers;
-            AutoScale = null;
-            return this;
-        }
+        [JsonPropertyName("init_scripts_safe_mode")]
+        public bool InitScriptsSafeMode { get; set; }
 
         /// <summary>
-        /// When enabled:
-        ///     Allows users to run SQL, Python, and PySpark commands. Users are restricted to the SparkSQL API and DataFrame API, and therefore cannot use Scala, R, RDD APIs, or clients that directly read the data from cloud storage, such as DBUtils.
-        ///     Cannot acquire direct access to data in the cloud via DBFS or by reading credentials from the cloud provider’s metadata service.
-        ///     Requires that clusters run Databricks Runtime 3.5 or above.
-        ///     Must run their commands on cluster nodes as a low-privilege user forbidden from accessing sensitive parts of the filesystem or creating network connections to ports other than 80 and 443.
+        /// Determines whether the cluster was created by a user through the UI, by the Databricks Jobs Scheduler, or through an API request.
         /// </summary>
-        private bool _enableTableAccessControl;
-        public ClusterInfo WithTableAccessControl(bool enableTableAccessControl)
-        {
-            _enableTableAccessControl = enableTableAccessControl;
-
-            if (SparkConfiguration == null)
-            {
-                SparkConfiguration = new Dictionary<string, string>();
-            }
-
-            if (enableTableAccessControl)
-            {
-                SparkConfiguration["spark.databricks.acl.dfAclsEnabled"] = "true";
-            }
-            else
-            {
-                SparkConfiguration.Remove("spark.databricks.acl.dfAclsEnabled");
-            }
-
-            var allowedReplLang = DatabricksAllowedReplLang(enableTableAccessControl, _clusterMode);
-
-            if (string.IsNullOrEmpty(allowedReplLang))
-            {
-                SparkConfiguration.Remove("spark.databricks.repl.allowedLanguages");
-            }
-            else
-            {
-                SparkConfiguration["spark.databricks.repl.allowedLanguages"] = allowedReplLang;
-            }
-
-            return this;
-        }
-
-        private ClusterMode _clusterMode = ClusterMode.Standard;
-
-        public ClusterInfo WithClusterMode(ClusterMode clusterMode)
-        {
-            _clusterMode = clusterMode;
-
-            if (CustomTags == null)
-            {
-                CustomTags = new Dictionary<string, string>();
-            }
-
-            if (SparkConfiguration == null)
-            {
-                SparkConfiguration = new Dictionary<string, string>();
-            }
-
-            switch (clusterMode)
-            {
-                case ClusterMode.HighConcurrency:
-                    CustomTags["ResourceClass"] = "Serverless";
-                    SparkConfiguration["spark.databricks.cluster.profile"] = "serverless";
-                    SparkConfiguration.Remove("spark.master");
-                    break;
-                case ClusterMode.SingleNode:
-                    CustomTags["ResourceClass"] = "SingleNode";
-                    SparkConfiguration["spark.databricks.cluster.profile"] = "singleNode";
-                    SparkConfiguration["spark.master"] = "local[*]";
-                    NumberOfWorkers = 0;
-                    break;
-                default: // Standard mode
-                    CustomTags.Remove("ResourceClass");
-                    SparkConfiguration.Remove("spark.databricks.cluster.profile");
-                    SparkConfiguration.Remove("spark.master");
-                    break;
-            }
-
-            var allowedReplLang = DatabricksAllowedReplLang(_enableTableAccessControl, clusterMode);
-
-            if (string.IsNullOrEmpty(allowedReplLang))
-            {
-                SparkConfiguration.Remove("spark.databricks.repl.allowedLanguages");
-            }
-            else
-            {
-                SparkConfiguration["spark.databricks.repl.allowedLanguages"] = allowedReplLang;
-            }
-
-            return this;
-        }
-
-        private static string DatabricksAllowedReplLang(bool enableTableAccessControl, ClusterMode clusterMode) =>
-            enableTableAccessControl ? "python,sql" : clusterMode == ClusterMode.HighConcurrency ? "sql,python,r" : null;
-
-        public ClusterInfo WithAutoTermination(int? autoTerminationMinutes)
-        {
-            AutoTerminationMinutes = autoTerminationMinutes.GetValueOrDefault();
-            return this;
-        }
-
-        public ClusterInfo WithRuntimeVersion(string runtimeVersion)
-        {
-            RuntimeVersion = runtimeVersion;
-            return this;
-        }
-
-        /// <summary>
-        /// This enables Photon engine on AWS Graviton-enabled clusters.
-        /// For Azure Databricks, this setting has no effect. Specify Photon-specific runtimes instead.
-        /// </summary>
-        /// <see cref="https://docs.databricks.com/clusters/graviton.html#databricks-rest-api"/>
-        public ClusterInfo WithRuntimeEngine(RuntimeEngine engine)
-        {
-            RuntimeEngine = engine;
-            return this;
-        }
-
-        public ClusterInfo WithNodeType(string workerNodeType, string driverNodeType = null)
-        {
-            NodeTypeId = workerNodeType;
-            DriverNodeTypeId = driverNodeType;
-            return this;
-        }
-
-        public ClusterInfo WithClusterLogConf(string dbfsDestination)
-        {
-            ClusterLogConfiguration =
-                new ClusterLogConf { Dbfs = new DbfsStorageInfo { Destination = dbfsDestination } };
-            return this;
-        }
+        [JsonPropertyName("cluster_source")]
+        public ClusterSource? ClusterSource { get; set; }
     }
 }

@@ -11,7 +11,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
             return (T)this;
         }
 
-        public T WithNewCluster(ClusterInfo newClusterConfig)
+        public T WithNewCluster(ClusterAttributes newClusterConfig)
         {
             NewCluster = newClusterConfig;
             ExistingClusterId = null;

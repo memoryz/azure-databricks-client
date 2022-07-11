@@ -11,5 +11,10 @@ namespace Microsoft.Azure.Databricks.Client
                 action(source.Value);
             }
         }
+
+        public static V? Map<T, V>(this T? @this, Func<T, V> f)
+            where T : struct
+            where V : struct
+            => @this.HasValue ? f(@this.Value) : null;
     }
 }

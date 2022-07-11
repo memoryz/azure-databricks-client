@@ -20,9 +20,15 @@ namespace Microsoft.Azure.Databricks.Client
         {
         }
 
-        public async Task<string> Create(ClusterInfo clusterInfo, CancellationToken cancellationToken = default)
+        public async Task<string> Create(ClusterAttributes clusterAttributes, string idempotency_token = default, CancellationToken cancellationToken = default)
         {
-            var clusterIdentifier = await HttpPost<ClusterInfo, JsonObject>(this.HttpClient, $"{ApiVersion}/clusters/create", clusterInfo, cancellationToken)
+            var jsonObj = JsonSerializer.SerializeToNode(clusterAttributes, options).AsObject();
+            if (!string.IsNullOrEmpty(idempotency_token))
+            {
+                jsonObj.Add("idempotency_token", idempotency_token);
+            }
+
+            var clusterIdentifier = await HttpPost<JsonObject, JsonObject>(this.HttpClient, $"{ApiVersion}/clusters/create", jsonObj, cancellationToken)
                 .ConfigureAwait(false);
             return clusterIdentifier["cluster_id"].GetValue<string>();
         }
@@ -32,10 +38,11 @@ namespace Microsoft.Azure.Databricks.Client
             await HttpPost(this.HttpClient, $"{ApiVersion}/clusters/start", new { cluster_id = clusterId }, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task Edit(string clusterId, ClusterInfo clusterConfig, CancellationToken cancellationToken = default)
+        public async Task Edit(string clusterId, ClusterAttributes clusterConfig, CancellationToken cancellationToken = default)
         {
-            clusterConfig.ClusterId = clusterId;
-            await HttpPost(this.HttpClient, $"{ApiVersion}/clusters/edit", clusterConfig, cancellationToken).ConfigureAwait(false);
+            var jsonObj = JsonSerializer.SerializeToNode(clusterConfig, options).AsObject();
+            jsonObj.Add("cluster_id", clusterId);
+            await HttpPost(this.HttpClient, $"{ApiVersion}/clusters/edit", jsonObj, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task Restart(string clusterId, CancellationToken cancellationToken = default)
