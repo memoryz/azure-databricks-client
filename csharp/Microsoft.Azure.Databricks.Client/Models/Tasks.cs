@@ -80,4 +80,40 @@ namespace Microsoft.Azure.Databricks.Client.Models
         [JsonPropertyName("parameters")]
         public List<string> Parameters { get; set; }
     }
+
+    public record PipelineTask
+    {
+        /// <summary>
+        /// The full name of the pipeline task to execute.
+        /// </summary>
+        [JsonPropertyName("pipeline_id")]
+        public string PipelineId { get; set; }
+    }
+
+    public record PythonWheelTask
+    {
+        /// <summary>
+        /// Name of the package to execute
+        /// </summary>
+        [JsonPropertyName("package_name")]
+        public string PackageName { get; set; }
+
+        /// <summary>
+        /// Named entry point to use, if it does not exist in the metadata of the package it executes the function from the package directly using `$packageName.$entryPoint()`
+        /// </summary>
+        [JsonPropertyName("entry_point")]
+        public string EntryPoint { get; set; }
+
+        /// <summary>
+        /// Command-line parameters passed to Python wheel task. Leave it empty if `named_parameters` is not null.
+        /// </summary>
+        [JsonPropertyName("parameters")]
+        public List<string> Parameters { get; set; }
+
+        /// <summary>
+        /// Command-line parameters passed to Python wheel task in the form of `["--name=task", "--data=dbfs:/path/to/data.json"]`. Leave it empty if `parameters` is not null.
+        /// </summary>
+        [JsonPropertyName("named_parameters")]
+        public Dictionary<string, string> NamedParameters { get; set; }
+    }
 }

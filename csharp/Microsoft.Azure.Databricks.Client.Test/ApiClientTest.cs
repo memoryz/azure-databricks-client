@@ -20,7 +20,8 @@ namespace Microsoft.Azure.Databricks.Client.Test
                 new JsonStringEnumConverter(),
                 new MillisecondEpochDateTimeConverter(),
                 new LibraryConverter(),
-                new SecretScopeConverter()
+                new SecretScopeConverter(),
+                new AccessControlRequestConverter()
             }
         };
 

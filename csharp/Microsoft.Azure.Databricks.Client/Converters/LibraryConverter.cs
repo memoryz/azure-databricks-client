@@ -7,43 +7,48 @@ namespace Microsoft.Azure.Databricks.Client.Converters
 {
     public class LibraryConverter : JsonConverter<Library>
     {
+        public override bool CanConvert(Type typeToConvert)
+        {
+            return typeof(Library).IsAssignableFrom(typeToConvert);
+        }
+
         public override bool HandleNull => true;
 
         public override Library Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             var library = JsonDocument.ParseValue(ref reader).RootElement;
-            if (library.TryGetProperty("jar", out var jar))
+            
+            if (library.TryGetProperty("jar", out _))
             {
-                return jar.Deserialize<JarLibrary>();
+                return library.Deserialize<JarLibrary>();
             }
 
-            if (library.TryGetProperty("egg", out var egg))
+            if (library.TryGetProperty("egg", out _))
             {
-                return egg.Deserialize<EggLibrary>();
+                return library.Deserialize<EggLibrary>();
             }
 
-            if (library.TryGetProperty("whl", out var whl))
+            if (library.TryGetProperty("whl", out _))
             {
-                return whl.Deserialize<WheelLibrary>();
+                return library.Deserialize<WheelLibrary>();
             }
 
-            if (library.TryGetProperty("maven", out var maven))
+            if (library.TryGetProperty("maven", out _))
             {
-                return maven.Deserialize<MavenLibrary>();
+                return library.Deserialize<MavenLibrary>();
             }
 
-            if (library.TryGetProperty("pypi", out var pypi))
+            if (library.TryGetProperty("pypi", out _))
             {
-                return pypi.Deserialize<PythonPyPiLibrary>();
+                return library.Deserialize<PythonPyPiLibrary>();
             }
 
-            if (library.TryGetProperty("cran", out var cran))
+            if (library.TryGetProperty("cran", out _))
             {
-                return cran.Deserialize<RCranLibrary>();
+                return library.Deserialize<RCranLibrary>();
             }
 
             throw new NotSupportedException("Library not recognized");
-
         }
 
         public override void Write(Utf8JsonWriter writer, Library value, JsonSerializerOptions options)

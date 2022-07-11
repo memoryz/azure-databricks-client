@@ -23,7 +23,8 @@ namespace Sample
                 new JsonStringEnumConverter(),
                 new MillisecondEpochDateTimeConverter(),
                 new LibraryConverter(),
-                new SecretScopeConverter()
+                new SecretScopeConverter(),
+                new AccessControlRequestConverter()
             }
         };
 
