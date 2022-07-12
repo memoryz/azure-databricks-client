@@ -13,9 +13,9 @@ namespace Microsoft.Azure.Databricks.Client
     {
         protected readonly HttpClient HttpClient;
 
-        protected string ApiVersion => "2.0";
+        protected virtual string ApiVersion => "2.0";
 
-        protected static readonly JsonSerializerOptions options = new()
+        protected static readonly JsonSerializerOptions Options = new()
         {
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
             Converters = {
@@ -49,13 +49,13 @@ namespace Microsoft.Azure.Databricks.Client
             }
 
             var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            return JsonSerializer.Deserialize<T>(responseStream, options);
+            return JsonSerializer.Deserialize<T>(responseStream, Options);
         }
 
         protected static async Task HttpPost<TBody>(HttpClient httpClient, string requestUri, TBody body, CancellationToken cancellationToken = default)
         {
             
-            HttpContent content = new StringContent(JsonSerializer.Serialize(body, options));
+            HttpContent content = new StringContent(JsonSerializer.Serialize(body, Options));
             var response = await httpClient.PostAsync(requestUri, content, cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
@@ -66,7 +66,7 @@ namespace Microsoft.Azure.Databricks.Client
 
         protected static async Task<TResult> HttpPost<TBody, TResult>(HttpClient httpClient, string requestUri, TBody body, CancellationToken cancellationToken = default)
         {
-            HttpContent content = new StringContent(JsonSerializer.Serialize(body, options));
+            HttpContent content = new StringContent(JsonSerializer.Serialize(body, Options));
             var response = await httpClient.PostAsync(requestUri, content, cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
@@ -75,7 +75,7 @@ namespace Microsoft.Azure.Databricks.Client
             }
 
             var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            return JsonSerializer.Deserialize<TResult>(responseStream, options);
+            return JsonSerializer.Deserialize<TResult>(responseStream, Options);
         }
 
         protected static bool PropertyExists(JsonObject obj, string propertyName)

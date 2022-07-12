@@ -22,6 +22,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// </summary>
         [DefaultValue(PauseStatus.UNPAUSED)]
         [JsonPropertyName("pause_status")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public PauseStatus PauseStatus { get; set; }
     }
 

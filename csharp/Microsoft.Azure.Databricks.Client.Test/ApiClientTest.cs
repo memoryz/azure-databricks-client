@@ -10,10 +10,9 @@ namespace Microsoft.Azure.Databricks.Client.Test
 {
     public abstract class ApiClientTest
     {
+        protected static readonly Uri BaseApiUri = new("https://test-server/api/");
 
-        public static readonly Uri BaseApiUri = new("https://test-server/api/");
-
-        protected static readonly JsonSerializerOptions options = new()
+        protected static readonly JsonSerializerOptions Options = new()
         {
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
             Converters = {
@@ -38,11 +37,11 @@ namespace Microsoft.Azure.Databricks.Client.Test
 
         protected static Predicate<HttpRequestMessage> GetMatcher(string expectedRequest)
         {
-            return new Predicate<HttpRequestMessage>(request =>
+            return request =>
             {
                 RequestContentMatch(request, expectedRequest);
                 return true;
-            });
+            };
         }
 
         protected Mock<HttpMessageHandler> CreateMockHandler()

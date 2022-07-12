@@ -6,11 +6,11 @@ namespace Microsoft.Azure.Databricks.Client.Test
     [DebuggerDisplay($"{{{nameof(GetDebuggerDisplay)}(),nq}}")]
     internal class EquatableJToken : IEquatable<EquatableJToken?>
     {
-        private readonly JToken jToken;
+        private readonly JToken _jToken;
 
         private EquatableJToken(JToken jToken)
         {
-            this.jToken = jToken;
+            this._jToken = jToken;
         }
 
         public override bool Equals(object? obj)
@@ -21,19 +21,19 @@ namespace Microsoft.Azure.Databricks.Client.Test
         public bool Equals(EquatableJToken? other)
         {
             return other is not null &&
-                   JToken.EqualityComparer.Equals(jToken, other.jToken);
+                   JToken.EqualityComparer.Equals(_jToken, other._jToken);
         }
 
         public override int GetHashCode()
         {
-            return JToken.EqualityComparer.GetHashCode(jToken);
+            return JToken.EqualityComparer.GetHashCode(_jToken);
         }
 
         private string GetDebuggerDisplay() => ToString()!;
 
         public override string? ToString()
         {
-            return jToken.ToString();
+            return _jToken.ToString();
         }
 
         public static implicit operator EquatableJToken(JToken token) => new(token);

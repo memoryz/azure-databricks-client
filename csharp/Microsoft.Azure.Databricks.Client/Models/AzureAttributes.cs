@@ -30,6 +30,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// This value does not affect cluster size and cannot be mutated over the lifetime of a cluster.
         /// </summary>
         [JsonPropertyName("first_on_demand")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public int FirstOnDemand { get; set; }
     }
 

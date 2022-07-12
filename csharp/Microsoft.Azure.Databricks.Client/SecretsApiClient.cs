@@ -67,7 +67,7 @@ namespace Microsoft.Azure.Databricks.Client
 
             if (scopeList.TryGetPropertyValue("scopes", out var scopes))
             {
-                return scopes.Deserialize<IEnumerable<SecretScope>>(options);
+                return scopes.Deserialize<IEnumerable<SecretScope>>(Options);
             }
             else
             {
@@ -99,7 +99,7 @@ namespace Microsoft.Azure.Databricks.Client
             var secretList = await HttpGet<JsonObject>(this.HttpClient, url, cancellationToken).ConfigureAwait(false);
             if (secretList.TryGetPropertyValue("secrets", out var secrets))
             {
-                return secrets.Deserialize<IEnumerable<SecretMetadata>>(options);
+                return secrets.Deserialize<IEnumerable<SecretMetadata>>(Options);
             }
             else
             {
@@ -131,7 +131,7 @@ namespace Microsoft.Azure.Databricks.Client
             var aclList = await HttpGet<JsonObject>(this.HttpClient, url, cancellationToken).ConfigureAwait(false);
             if (aclList.TryGetPropertyValue("items", out var items))
             {
-                return items.Deserialize<IEnumerable<AclItem>>(options);
+                return items.Deserialize<IEnumerable<AclItem>>(Options);
             }
             else
             {

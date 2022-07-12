@@ -20,6 +20,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         [JsonPropertyName("group_name")]
         public string GroupName { get; set; }
 
+        [JsonPropertyName("permission_level")]
         public override JobPermissionLevel PermissionLevel
         {
             get => base.PermissionLevel;

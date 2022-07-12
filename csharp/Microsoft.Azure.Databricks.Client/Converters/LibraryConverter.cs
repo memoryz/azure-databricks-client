@@ -53,7 +53,18 @@ namespace Microsoft.Azure.Databricks.Client.Converters
 
         public override void Write(Utf8JsonWriter writer, Library value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            var node = value switch
+            {
+                JarLibrary jar => JsonSerializer.SerializeToNode(jar),
+                EggLibrary egg => JsonSerializer.SerializeToNode(egg),
+                WheelLibrary wheel => JsonSerializer.SerializeToNode(wheel),
+                MavenLibrary maven => JsonSerializer.SerializeToNode(maven),
+                PythonPyPiLibrary pypi => JsonSerializer.SerializeToNode(pypi),
+                RCranLibrary rcran => JsonSerializer.SerializeToNode(rcran),
+                _ => throw new NotImplementedException($"JsonConverter not implemented for type {value.GetType()}")
+            };
+
+            node!.WriteTo(writer);
         }
     }
 }

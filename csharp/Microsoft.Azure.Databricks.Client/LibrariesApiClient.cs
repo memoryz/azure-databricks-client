@@ -23,10 +23,10 @@ namespace Microsoft.Azure.Databricks.Client
             if (result.TryGetPropertyValue("statuses", out var statuses))
             {
                 return statuses
-                    .Deserialize<IEnumerable<JsonObject>>(options)
+                    .Deserialize<IEnumerable<JsonObject>>(Options)
                     .ToDictionary(
-                        e => e["cluster_id"].Deserialize<string>(options),
-                        e => e["library_statuses"].Deserialize<IEnumerable<LibraryFullStatus>>(options)
+                        e => e["cluster_id"].Deserialize<string>(Options),
+                        e => e["library_statuses"].Deserialize<IEnumerable<LibraryFullStatus>>(Options)
                     );
             }
             else

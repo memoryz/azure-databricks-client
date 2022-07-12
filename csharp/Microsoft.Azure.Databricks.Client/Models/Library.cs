@@ -3,10 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client.Models
 {
-    public abstract record Library
-    {
-
-    }
+    public abstract record Library;
 
     public record JarLibrary : Library
     {

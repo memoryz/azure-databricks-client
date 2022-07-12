@@ -12,7 +12,7 @@ namespace Microsoft.Azure.Databricks.Client.Converters
         {
             if (reader.TryGetInt64(out var time))
             {
-                return DateTimeOffset.FromUnixTimeMilliseconds(time).LocalDateTime;
+                return DateTimeOffset.FromUnixTimeMilliseconds(time);
             }
 
             return null;

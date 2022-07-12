@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client.Models
@@ -38,7 +37,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
 
         /// <summary>
         /// An object containing a set of optional, user-specified Spark configuration key-value pairs. Users can also pass in a string of extra JVM options to the driver and the executors via spark.driver.extraJavaOptions and spark.executor.extraJavaOptions respectively.
-        ///Example Spark confs: {"spark.speculation": true, "spark.streaming.ui.retainedBatches": 5} or {"spark.driver.extraJavaOptions": "-verbose:gc -XX:+PrintGCDetails"}
+        /// Example Spark confs: {"spark.speculation": true, "spark.streaming.ui.retainedBatches": 5} or {"spark.driver.extraJavaOptions": "-verbose:gc -XX:+PrintGCDetails"}
         /// </summary>
         [JsonPropertyName("spark_conf")]
         public Dictionary<string, string> SparkConfiguration { get; set; }
@@ -155,9 +154,9 @@ namespace Microsoft.Azure.Databricks.Client.Models
         [JsonPropertyName("runtime_engine")]
         public RuntimeEngine RuntimeEngine { get; set; }
 
-        public static ClusterInfo GetNewClusterConfiguration(string clusterName = null)
+        public static ClusterAttributes GetNewClusterConfiguration(string clusterName = null)
         {
-            return new ClusterInfo
+            return new ClusterAttributes
             {
                 ClusterName = clusterName
             };
@@ -192,10 +191,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         {
             _enableTableAccessControl = enableTableAccessControl;
 
-            if (SparkConfiguration == null)
-            {
-                SparkConfiguration = new Dictionary<string, string>();
-            }
+            SparkConfiguration ??= new Dictionary<string, string>();
 
             if (enableTableAccessControl)
             {
@@ -226,15 +222,9 @@ namespace Microsoft.Azure.Databricks.Client.Models
         {
             _clusterMode = clusterMode;
 
-            if (CustomTags == null)
-            {
-                CustomTags = new Dictionary<string, string>();
-            }
+            CustomTags ??= new Dictionary<string, string>();
 
-            if (SparkConfiguration == null)
-            {
-                SparkConfiguration = new Dictionary<string, string>();
-            }
+            SparkConfiguration ??= new Dictionary<string, string>();
 
             switch (clusterMode)
             {
@@ -249,6 +239,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
                     SparkConfiguration["spark.master"] = "local[*]";
                     NumberOfWorkers = 0;
                     break;
+                case ClusterMode.Standard:
                 default: // Standard mode
                     CustomTags.Remove("ResourceClass");
                     SparkConfiguration.Remove("spark.databricks.cluster.profile");
@@ -269,6 +260,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
 
             return this;
         }
+
         public ClusterAttributes WithAutoTermination(int? autoTerminationMinutes)
         {
             AutoTerminationMinutes = autoTerminationMinutes.GetValueOrDefault();
@@ -285,7 +277,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// This enables Photon engine on AWS Graviton-enabled clusters.
         /// For Azure Databricks, this setting has no effect. Specify Photon-specific runtimes instead.
         /// </summary>
-        /// <see cref="https://docs.databricks.com/clusters/graviton.html#databricks-rest-api"/>
+        /// <see href="https://docs.databricks.com/clusters/graviton.html#databricks-rest-api" />
         public ClusterAttributes WithRuntimeEngine(RuntimeEngine engine)
         {
             RuntimeEngine = engine;
@@ -327,14 +319,13 @@ namespace Microsoft.Azure.Databricks.Client.Models
 
         public ClusterAttributes WithDockerImage(string url, (string, string)? basicAuth = default)
         {
-            if (basicAuth == null)
-            {
-                DockerImage = new DockerImage { Url = url };
-            }
-            else
-            {
-                DockerImage = new DockerImage { Url = url, BasicAuth = new DockerBasicAuth { UserName = basicAuth.Value.Item1, Password = basicAuth.Value.Item2 } };
-            }
+            DockerImage = basicAuth == null
+                ? new DockerImage {Url = url}
+                : new DockerImage
+                {
+                    Url = url,
+                    BasicAuth = new DockerBasicAuth {UserName = basicAuth.Value.Item1, Password = basicAuth.Value.Item2}
+                };
 
             return this;
         }

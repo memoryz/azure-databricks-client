@@ -1,7 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable UnusedMember.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 
 namespace Microsoft.Azure.Databricks.Client.Models
 {
@@ -18,7 +20,8 @@ namespace Microsoft.Azure.Databricks.Client.Models
     public record TaskSettings : HasTaskKey
     {
         [JsonPropertyName("depends_on")]
-        public IEnumerable<HasTaskKey> DependsOn { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+        public IEnumerable<HasTaskKey> DependsOn { get; set; } = Enumerable.Empty<HasTaskKey>();
 
         [JsonPropertyName("existing_cluster_id")]
         public string ExistingClusterId { get; set; }
@@ -105,6 +108,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// An optional policy to specify whether to retry a job when it times out. The default behavior is to not retry on timeout.
         /// </summary>
         [JsonPropertyName("retry_on_timeout")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public bool RetryOnTimeout { get; set; }
     }
 
@@ -246,6 +250,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// An optional specification for a remote repository containing the notebooks used by this job's notebook tasks.
         /// </summary>
         [JsonPropertyName("git_source")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public GitSource GitSource { get; set; }
 
         /// <summary>

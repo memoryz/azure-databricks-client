@@ -27,6 +27,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// If true, do not send email to recipients specified in on_failure if the run is skipped.
         /// </summary>
         [JsonPropertyName("no_alert_for_skipped_runs")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public bool NoAlertForSkippedRuns { get; set; }
     }
 }
