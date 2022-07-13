@@ -139,6 +139,85 @@ public class JobApiClientTest : ApiClientTest
             }
             ";
 
+    private const string MultiTaskRunJson = @"
+            {
+                ""run_name"": ""A multitask job run"",
+                ""tasks"": [{
+                        ""task_key"": ""Sessionize"",
+                        ""depends_on"": [],
+                        ""existing_cluster_id"": ""0923-164208-meows279"",
+                        ""spark_jar_task"": {
+                            ""main_class_name"": ""com.databricks.Sessionize"",
+                            ""parameters"": [""--data"", ""dbfs:/path/to/data.json""]
+                        },
+                        ""libraries"": [{
+                            ""jar"": ""dbfs:/mnt/databricks/Sessionize.jar""
+                        }],
+                        ""timeout_seconds"": 86400
+                    },
+                    {
+                        ""task_key"": ""Orders_Ingest"",
+                        ""depends_on"": [],
+                        ""existing_cluster_id"": ""0923-164208-meows279"",
+                        ""spark_jar_task"": {
+                            ""main_class_name"": ""com.databricks.OrdersIngest"",
+                            ""parameters"": [""--data"", ""dbfs:/path/to/order-data.json""]
+                        },
+                        ""libraries"": [{
+                            ""jar"": ""dbfs:/mnt/databricks/OrderIngest.jar""
+                        }],
+                        ""timeout_seconds"": 86400
+                    },
+                    {
+                        ""task_key"": ""Match"",
+                        ""depends_on"": [{
+                                ""task_key"": ""Orders_Ingest""
+                            },
+                            {
+                                ""task_key"": ""Sessionize""
+                            }
+                        ],
+                        ""new_cluster"": {
+                            ""spark_version"": ""7.3.x-scala2.12"",
+                            ""node_type_id"": ""Standard_D3_v2"",
+                            ""spark_conf"": {
+                                ""spark.speculation"": ""true""
+                            },
+                            ""azure_attributes"": {
+                                ""availability"": ""ON_DEMAND_AZURE"",
+                                ""spot_bid_max_price"": -1,
+                                ""first_on_demand"": 0
+                            },
+                            ""autoscale"": {
+                                ""min_workers"": 2,
+                                ""max_workers"": 16
+                            }
+                        },
+                        ""notebook_task"": {
+                            ""notebook_path"": ""/Users/user.name@databricks.com/Match"",
+                            ""base_parameters"": {
+                                ""name"": ""John Doe"",
+                                ""age"": ""35""
+                            }
+                        },
+                        ""timeout_seconds"": 86400
+                    }
+                ],
+                ""timeout_seconds"": 86400,
+                ""git_source"": null,
+                ""idempotency_token"": ""8f018174-4792-40d5-bcbc-3e6a527352c8"",
+                ""access_control_list"": [{
+                        ""user_name"": ""jsmith@example.com"",
+                        ""permission_level"": ""CAN_MANAGE""
+                    },
+                    {
+                        ""group_name"": ""readonly-group@example.com"",
+                        ""permission_level"": ""CAN_VIEW""
+                    }
+                ]
+            }
+            ";
+
     private static IEnumerable<AccessControlRequest> CreateDefaultAccessControlRequest()
     {
         return new AccessControlRequest[]
@@ -150,15 +229,92 @@ public class JobApiClientTest : ApiClientTest
         };
     }
 
-    private static JobSettings CreateDefaultJobSettings()
+    private static ClusterAttributes CreateDefaultJobCluster()
     {
         var cluster = new ClusterAttributes()
             .WithRuntimeVersion(RuntimeVersions.Runtime_7_3)
             .WithNodeType(NodeTypes.Standard_D3_v2)
             .WithAutoScale(2, 16);
-        cluster.SparkConfiguration = new Dictionary<string, string> {{"spark.speculation", "true"}};
+        cluster.SparkConfiguration = new Dictionary<string, string> { { "spark.speculation", "true" } };
         cluster.AzureAttributes = new AzureAttributes
-            {Availability = AzureAvailability.ON_DEMAND_AZURE, FirstOnDemand = 0, SpotBidMaxPrice = -1};
+            { Availability = AzureAvailability.ON_DEMAND_AZURE, FirstOnDemand = 0, SpotBidMaxPrice = -1 };
+        return cluster;
+    }
+
+    private static RunSubmitSettings CreateDefaultRunSubmitSettings()
+    {
+        var cluster = CreateDefaultJobCluster();
+
+        var task1 = new RunSubmitTaskSettings
+        {
+            TaskKey = "Sessionize",
+            ExistingClusterId = "0923-164208-meows279",
+            SparkJarTask = new SparkJarTask
+            {
+                MainClassName = "com.databricks.Sessionize",
+                Parameters = new List<string> {"--data", "dbfs:/path/to/data.json"}
+            },
+            Libraries = new List<Library>
+            {
+                new JarLibrary
+                {
+                    Jar = "dbfs:/mnt/databricks/Sessionize.jar"
+                }
+            },
+            TimeoutSeconds = 86400
+        };
+
+        var task2 = new RunSubmitTaskSettings
+        {
+            TaskKey = "Orders_Ingest",
+            ExistingClusterId = "0923-164208-meows279",
+            SparkJarTask = new SparkJarTask
+            {
+                MainClassName = "com.databricks.OrdersIngest",
+                Parameters = new List<string> { "--data", "dbfs:/path/to/order-data.json" }
+            },
+            Libraries = new List<Library>
+            {
+                new JarLibrary
+                {
+                    Jar = "dbfs:/mnt/databricks/OrderIngest.jar"
+                }
+            },
+            TimeoutSeconds = 86400
+        };
+
+        var task3 = new RunSubmitTaskSettings
+        {
+            TaskKey = "Match",
+            DependsOn = new[] { task2, task1 },
+            NewCluster = cluster,
+            NotebookTask = new NotebookTask
+            {
+                NotebookPath = "/Users/user.name@databricks.com/Match",
+                BaseParameters = new Dictionary<string, string>
+                {
+                    {"name", "John Doe"}, {"age", "35"}
+                }
+            },
+            TimeoutSeconds = 86400
+        };
+
+        var runSubmit = new RunSubmitSettings
+        {
+            RunName = "A multitask job run",
+            TimeoutSeconds = 86400,
+            Tasks = new[]
+            {
+                task1, task2, task3
+            }
+        };
+
+        return runSubmit;
+    }
+
+    private static JobSettings CreateDefaultJobSettings()
+    {
+        var cluster = CreateDefaultJobCluster();
 
         var task1 = new JobTaskSettings
         {
@@ -541,12 +697,48 @@ public class JobApiClientTest : ApiClientTest
         using var client = new JobsApiClient(hc);
         var runId = await client.RunNow(11223344, runParams, "8f018174-4792-40d5-bcbc-3e6a527352c8");
 
-        Assert.AreEqual(455644833, runId.RunId);
+        Assert.AreEqual(455644833, runId);
 
         handler.VerifyRequest(
             HttpMethod.Post,
             apiUri,
             GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
+
+    [TestMethod]
+    public async Task TestRunSubmit()
+    {
+        var apiUri = new Uri(JobsApiUri, "runs/submit");
+
+        const string expectedResponse = @"
+            {
+              ""run_id"": 455644833
+            }
+        ";
+
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json")
+            .Verifiable();
+
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
+
+        using var client = new JobsApiClient(hc);
+
+        var run = CreateDefaultRunSubmitSettings();
+        var acr = CreateDefaultAccessControlRequest();
+        var runId = await client.RunSubmit(run, acr, "8f018174-4792-40d5-bcbc-3e6a527352c8");
+
+        Assert.AreEqual(455644833, runId);
+
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(MultiTaskRunJson),
             Times.Once()
         );
     }

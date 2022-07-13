@@ -23,13 +23,9 @@ namespace Microsoft.Azure.Databricks.Client
         {
             var request = JsonSerializer.SerializeToNode(jobSettings, Options)!.AsObject();
 
-            accessControlList.ForEach(acr =>
-            {
-                request.Add(new KeyValuePair<string, JsonNode>(
-                    "access_control_list",
-                    JsonSerializer.SerializeToNode(acr, Options)
-                ));
-            });
+            accessControlList.ForEach(
+                acr => request.Add("access_control_list", JsonSerializer.SerializeToNode(acr, Options))
+            );
 
             var jobIdentifier =
                 await HttpPost<JsonObject, JsonObject>(this.HttpClient, $"{ApiVersion}/jobs/create", request,
@@ -82,29 +78,37 @@ namespace Microsoft.Azure.Databricks.Client
                 .ConfigureAwait(false);
         }
 
-        public async Task<RunIdentifier> RunNow(long jobId, RunParameters runParams, string idempotencyToken = default,
+        public async Task<long> RunNow(long jobId, RunParameters runParams, string idempotencyToken = default,
             CancellationToken cancellationToken = default)
         {
-            var jsonObj = JsonSerializer.SerializeToNode(runParams, Options)!.AsObject();
+            var request = JsonSerializer.SerializeToNode(runParams, Options)!.AsObject();
 
-            jsonObj.Add("job_id", jobId);
+            request.Add("job_id", jobId);
+            idempotencyToken.ForEach(token => request.Add("idempotency_token", token));
 
-            if (!string.IsNullOrEmpty(idempotencyToken))
-            {
-                jsonObj.Add("idempotency_token", idempotencyToken);
-            }
-
-            return await HttpPost<JsonObject, RunIdentifier>(
-                this.HttpClient, $"{ApiVersion}/jobs/run-now", jsonObj, cancellationToken
+            var result = await HttpPost<JsonObject, RunIdentifier>(
+                this.HttpClient, $"{ApiVersion}/jobs/run-now", request, cancellationToken
             ).ConfigureAwait(false);
+
+            return result.RunId;
         }
 
-        //public async Task<long> RunSubmit(RunOnceSettings settings, CancellationToken cancellationToken = default)
-        //{
-        //    var result = await HttpPost<RunOnceSettings, RunIdentifier>(this.HttpClient, $"{ApiVersion}/jobs/runs/submit", settings, cancellationToken)
-        //        .ConfigureAwait(false);
-        //    return result.RunId;
-        //}
+        public async Task<long> RunSubmit(RunSubmitSettings settings,
+            IEnumerable<AccessControlRequest> accessControlList = default, string idempotencyToken = default,
+            CancellationToken cancellationToken = default)
+        {
+            var request = JsonSerializer.SerializeToNode(settings, Options)!.AsObject();
+            idempotencyToken.ForEach(token => request.Add("idempotency_token", token));
+            accessControlList.ForEach(
+                acr => request.Add("access_control_list", JsonSerializer.SerializeToNode(acr, Options))
+            );
+
+            var result = await HttpPost<JsonObject, RunIdentifier>(
+                this.HttpClient, $"{ApiVersion}/jobs/runs/submit", request, cancellationToken
+            ).ConfigureAwait(false);
+
+            return result.RunId;
+        }
 
         //public async Task<RunList> RunsList(long? jobId = null, int offset = 0, int limit = 20, bool activeOnly = false,
         //    bool completedOnly = false, /*RunType? runType = null, */ CancellationToken cancellationToken = default)
