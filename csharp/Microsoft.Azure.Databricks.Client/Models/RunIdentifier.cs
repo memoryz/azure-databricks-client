@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client.Models
 {
@@ -13,6 +14,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// <summary>
         /// The sequence number of this run among all runs of the job.
         /// </summary>
+        [Obsolete("This is set to the same value as `run_id`.")]
         [JsonPropertyName("number_in_job")]
         public long NumberInJob { get; set; }
     }

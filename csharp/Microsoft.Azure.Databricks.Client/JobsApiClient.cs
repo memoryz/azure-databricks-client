@@ -1,5 +1,4 @@
 ﻿using Microsoft.Azure.Databricks.Client.Models;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -83,24 +82,22 @@ namespace Microsoft.Azure.Databricks.Client
                 .ConfigureAwait(false);
         }
 
-        //public async Task<RunIdentifier> RunNow(long jobId, RunParameters runParams, CancellationToken cancellationToken = default)
-        //{
-        //    var settings = new RunNowSettings
-        //    {
-        //        JobId = jobId
-        //    };
+        public async Task<RunIdentifier> RunNow(long jobId, RunParameters runParams, string idempotencyToken = default,
+            CancellationToken cancellationToken = default)
+        {
+            var jsonObj = JsonSerializer.SerializeToNode(runParams, Options)!.AsObject();
 
-        //    if (runParams != null)
-        //    {
-        //        settings.SparkSubmitParams = runParams.SparkSubmitParams;
-        //        settings.PythonParams = runParams.PythonParams;
-        //        settings.NotebookParams = runParams.NotebookParams;
-        //        settings.JarParams = runParams.JarParams;
-        //    }
+            jsonObj.Add("job_id", jobId);
 
-        //    return await HttpPost<RunNowSettings, RunIdentifier>(this.HttpClient, $"{ApiVersion}/jobs/run-now", settings, cancellationToken)
-        //        .ConfigureAwait(false);
-        //}
+            if (!string.IsNullOrEmpty(idempotencyToken))
+            {
+                jsonObj.Add("idempotency_token", idempotencyToken);
+            }
+
+            return await HttpPost<JsonObject, RunIdentifier>(
+                this.HttpClient, $"{ApiVersion}/jobs/run-now", jsonObj, cancellationToken
+            ).ConfigureAwait(false);
+        }
 
         //public async Task<long> RunSubmit(RunOnceSettings settings, CancellationToken cancellationToken = default)
         //{

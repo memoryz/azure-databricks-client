@@ -52,10 +52,10 @@ namespace Microsoft.Azure.Databricks.Client
         Task Update(long jobId, JobSettings newSettings, string[] fieldsToRemove = default,
             CancellationToken cancellationToken = default);
 
-        ///// <summary>
-        ///// Runs the job now, and returns the run_id of the triggered run.
-        ///// </summary>
-        //Task<RunIdentifier> RunNow(long jobId, RunParameters runParams, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Runs the job now, and returns the run_id of the triggered run.
+        /// </summary>
+        Task<RunIdentifier> RunNow(long jobId, RunParameters runParams, string idempotencyToken = default, CancellationToken cancellationToken = default);
 
         ///// <summary>
         ///// Submit a one-time run with the provided settings. This endpoint doesn't require a Databricks job to be created. You can directly submit your workload. Runs submitted via this endpoint don’t show up in the UI. Once the run is submitted, you can use the jobs/runs/get API to check the run state.

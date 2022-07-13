@@ -258,12 +258,6 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// </summary>
         [JsonPropertyName("format")]
         public JobFormat Format { get; set; }
-
-        ///// <summary>
-        ///// List of permissions to set on the job.
-        ///// </summary>
-        //[JsonPropertyName("access_control_list")]
-        //public IEnumerable<AccessControlRequest> AccessControlList { get; set; }
     }
 
     public enum JobFormat
