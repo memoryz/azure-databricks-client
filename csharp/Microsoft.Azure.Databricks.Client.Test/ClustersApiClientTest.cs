@@ -6,119 +6,119 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Microsoft.Azure.Databricks.Client.Test
+namespace Microsoft.Azure.Databricks.Client.Test;
+
+[TestClass]
+public class ClustersApiClientTest: ApiClientTest
 {
-    [TestClass]
-    public class ClustersApiClientTest: ApiClientTest
+    private static readonly Uri ClusterApiUri = new(BaseApiUri, "2.0/clusters/");
+
+    [TestMethod]
+    public async Task TestCreateFixedWorker()
     {
-        private static readonly Uri ClusterApiUri = new(BaseApiUri, "2.0/clusters/");
-
-        [TestMethod]
-        public async Task TestCreateFixedWorker()
-        {
-            var apiUri = new Uri(ClusterApiUri, "create");
-            const string expectedRequest = "{\"cluster_name\": \"my-cluster\",\"spark_version\": \"7.3.x-scala2.12\",\"node_type_id\": \"Standard_D3_v2\",\"spark_conf\": {\"spark.speculation\": \"true\"},\"num_workers\": 25}";
-            var expectedResponse = new { cluster_id = "1234-567890-cited123" };
+        var apiUri = new Uri(ClusterApiUri, "create");
+        const string expectedRequest = "{\"cluster_name\": \"my-cluster\",\"spark_version\": \"7.3.x-scala2.12\",\"node_type_id\": \"Standard_D3_v2\",\"spark_conf\": {\"spark.speculation\": \"true\"},\"num_workers\": 25}";
+        var expectedResponse = new { cluster_id = "1234-567890-cited123" };
             
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, Options), "application/json")
-                .Verifiable();
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, Options), "application/json")
+            .Verifiable();
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            var clusterInfo = ClusterAttributes.GetNewClusterConfiguration("my-cluster")
-                .WithNodeType("Standard_D3_v2")
-                .WithNumberOfWorkers(25)
-                .WithRuntimeVersion(RuntimeVersions.Runtime_7_3);
-            clusterInfo.SparkConfiguration = new Dictionary<string, string> { { "spark.speculation", "true" } };
+        using var client = new ClustersApiClient(hc);
+        var clusterInfo = ClusterAttributes.GetNewClusterConfiguration("my-cluster")
+            .WithNodeType("Standard_D3_v2")
+            .WithNumberOfWorkers(25)
+            .WithRuntimeVersion(RuntimeVersions.Runtime_7_3);
+        clusterInfo.SparkConfiguration = new Dictionary<string, string> { { "spark.speculation", "true" } };
 
-            var clusterId = await client.Create(clusterInfo);
-            Assert.AreEqual(expectedResponse.cluster_id, clusterId);
+        var clusterId = await client.Create(clusterInfo);
+        Assert.AreEqual(expectedResponse.cluster_id, clusterId);
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestCreateAutoScale()
-        {
-            var apiUri = new Uri(ClusterApiUri, "create");
-            const string expectedRequest = "{\"cluster_name\":\"autoscaling-cluster\",\"spark_version\":\"7.3.x-scala2.12\",\"node_type_id\":\"Standard_D3_v2\",\"autoscale\":{\"min_workers\":2,\"max_workers\":50}}";
-            var expectedResponse = new { cluster_id = "1234-567890-hared123" };
+    [TestMethod]
+    public async Task TestCreateAutoScale()
+    {
+        var apiUri = new Uri(ClusterApiUri, "create");
+        const string expectedRequest = "{\"cluster_name\":\"autoscaling-cluster\",\"spark_version\":\"7.3.x-scala2.12\",\"node_type_id\":\"Standard_D3_v2\",\"autoscale\":{\"min_workers\":2,\"max_workers\":50}}";
+        var expectedResponse = new { cluster_id = "1234-567890-hared123" };
 
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, Options), "application/json")
-                .Verifiable();
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, Options), "application/json")
+            .Verifiable();
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            var clusterInfo = ClusterAttributes.GetNewClusterConfiguration("autoscaling-cluster")
-                .WithNodeType("Standard_D3_v2")
-                .WithAutoScale(2, 50)
-                .WithRuntimeVersion(RuntimeVersions.Runtime_7_3);
+        using var client = new ClustersApiClient(hc);
+        var clusterInfo = ClusterAttributes.GetNewClusterConfiguration("autoscaling-cluster")
+            .WithNodeType("Standard_D3_v2")
+            .WithAutoScale(2, 50)
+            .WithRuntimeVersion(RuntimeVersions.Runtime_7_3);
 
-            var clusterId = await client.Create(clusterInfo);
-            Assert.AreEqual(expectedResponse.cluster_id, clusterId);
+        var clusterId = await client.Create(clusterInfo);
+        Assert.AreEqual(expectedResponse.cluster_id, clusterId);
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestCreateSingleNode()
-        {
-            var apiUri = new Uri(ClusterApiUri, "create");
-            const string expectedRequest = "{\"cluster_name\":\"single-node-cluster\",\"spark_version\":\"7.3.x-scala2.12\",\"node_type_id\":\"Standard_D3_v2\",\"num_workers\":0,\"spark_conf\":{\"spark.databricks.cluster.profile\":\"singleNode\",\"spark.master\":\"local[*]\"},\"custom_tags\":{\"ResourceClass\":\"SingleNode\"}}";
-            var expectedResponse = new { cluster_id = "1234-567890-pouch123" };
+    [TestMethod]
+    public async Task TestCreateSingleNode()
+    {
+        var apiUri = new Uri(ClusterApiUri, "create");
+        const string expectedRequest = "{\"cluster_name\":\"single-node-cluster\",\"spark_version\":\"7.3.x-scala2.12\",\"node_type_id\":\"Standard_D3_v2\",\"num_workers\":0,\"spark_conf\":{\"spark.databricks.cluster.profile\":\"singleNode\",\"spark.master\":\"local[*]\"},\"custom_tags\":{\"ResourceClass\":\"SingleNode\"}}";
+        var expectedResponse = new { cluster_id = "1234-567890-pouch123" };
 
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, Options), "application/json")
-                .Verifiable();
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, Options), "application/json")
+            .Verifiable();
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            var clusterInfo = ClusterAttributes.GetNewClusterConfiguration("single-node-cluster")
-                .WithNodeType("Standard_D3_v2")
-                .WithClusterMode(ClusterMode.SingleNode)
-                .WithRuntimeVersion(RuntimeVersions.Runtime_7_3);
+        using var client = new ClustersApiClient(hc);
+        var clusterInfo = ClusterAttributes.GetNewClusterConfiguration("single-node-cluster")
+            .WithNodeType("Standard_D3_v2")
+            .WithClusterMode(ClusterMode.SingleNode)
+            .WithRuntimeVersion(RuntimeVersions.Runtime_7_3);
 
-            string clusterId = await client.Create(clusterInfo);
-            Assert.AreEqual(expectedResponse.cluster_id, clusterId);
+        string clusterId = await client.Create(clusterInfo);
+        Assert.AreEqual(expectedResponse.cluster_id, clusterId);
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestCreateWithIdempotencyToken()
-        {
-            const string idempotencyToken = "test_idempotency_token";
-            var apiUri = new Uri(ClusterApiUri, "create");
-            const string expectedRequest = @"
+    [TestMethod]
+    public async Task TestCreateWithIdempotencyToken()
+    {
+        const string idempotencyToken = "test_idempotency_token";
+        var apiUri = new Uri(ClusterApiUri, "create");
+        const string expectedRequest = @"
             {
               ""cluster_name"": ""single-node-cluster"",
               ""spark_version"": ""7.3.x-scala2.12"",
@@ -132,189 +132,189 @@ namespace Microsoft.Azure.Databricks.Client.Test
               ""idempotency_token"": ""test_idempotency_token""
             }
             ";
-            var expectedResponse = new { cluster_id = "1234-567890-pouch123" };
+        var expectedResponse = new { cluster_id = "1234-567890-pouch123" };
 
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, Options), "application/json")
-                .Verifiable();
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, Options), "application/json")
+            .Verifiable();
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            var clusterAttributes = ClusterAttributes.GetNewClusterConfiguration("single-node-cluster")
-                .WithNodeType("Standard_D3_v2")
-                .WithClusterMode(ClusterMode.SingleNode)
-                .WithRuntimeVersion(RuntimeVersions.Runtime_7_3);
+        using var client = new ClustersApiClient(hc);
+        var clusterAttributes = ClusterAttributes.GetNewClusterConfiguration("single-node-cluster")
+            .WithNodeType("Standard_D3_v2")
+            .WithClusterMode(ClusterMode.SingleNode)
+            .WithRuntimeVersion(RuntimeVersions.Runtime_7_3);
 
-            var clusterId = await client.Create(clusterAttributes, idempotencyToken);
-            Assert.AreEqual(expectedResponse.cluster_id, clusterId);
+        var clusterId = await client.Create(clusterAttributes, idempotencyToken);
+        Assert.AreEqual(expectedResponse.cluster_id, clusterId);
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestEdit()
-        {
-            var apiUri = new Uri(ClusterApiUri, "edit");
-            const string expectedRequest = "{\"cluster_id\":\"1202-211320-brick1\",\"num_workers\":10,\"spark_version\":\"7.3.x-scala2.12\",\"node_type_id\":\"Standard_D3_v2\"}";
+    [TestMethod]
+    public async Task TestEdit()
+    {
+        var apiUri = new Uri(ClusterApiUri, "edit");
+        const string expectedRequest = "{\"cluster_id\":\"1202-211320-brick1\",\"num_workers\":10,\"spark_version\":\"7.3.x-scala2.12\",\"node_type_id\":\"Standard_D3_v2\"}";
 
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK);
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK);
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            var clusterInfo = new ClusterInfo()
-                .WithNumberOfWorkers(10)
-                .WithRuntimeVersion(RuntimeVersions.Runtime_7_3)
-                .WithNodeType("Standard_D3_v2");
+        using var client = new ClustersApiClient(hc);
+        var clusterInfo = new ClusterInfo()
+            .WithNumberOfWorkers(10)
+            .WithRuntimeVersion(RuntimeVersions.Runtime_7_3)
+            .WithNodeType("Standard_D3_v2");
 
-            await client.Edit("1202-211320-brick1", clusterInfo);
+        await client.Edit("1202-211320-brick1", clusterInfo);
             
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestStart()
-        {
-            var apiUri = new Uri(ClusterApiUri, "start");
-            const string expectedRequest = "{\"cluster_id\":\"1234-567890-reef123\"}";
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK);
+    [TestMethod]
+    public async Task TestStart()
+    {
+        var apiUri = new Uri(ClusterApiUri, "start");
+        const string expectedRequest = "{\"cluster_id\":\"1234-567890-reef123\"}";
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK);
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            await client.Start("1234-567890-reef123");
+        using var client = new ClustersApiClient(hc);
+        await client.Start("1234-567890-reef123");
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestRetart()
-        {
-            var apiUri = new Uri(ClusterApiUri, "restart");
-            const string expectedRequest = "{\"cluster_id\":\"1234-567890-reef123\"}";
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK);
+    [TestMethod]
+    public async Task TestRetart()
+    {
+        var apiUri = new Uri(ClusterApiUri, "restart");
+        const string expectedRequest = "{\"cluster_id\":\"1234-567890-reef123\"}";
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK);
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            await client.Restart("1234-567890-reef123");
+        using var client = new ClustersApiClient(hc);
+        await client.Restart("1234-567890-reef123");
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestResize()
-        {
-            var apiUri = new Uri(ClusterApiUri, "resize");
-            const string expectedRequest = "{\"cluster_id\":\"1234-567890-reef123\",\"num_workers\":30}";
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK);
+    [TestMethod]
+    public async Task TestResize()
+    {
+        var apiUri = new Uri(ClusterApiUri, "resize");
+        const string expectedRequest = "{\"cluster_id\":\"1234-567890-reef123\",\"num_workers\":30}";
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK);
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            await client.Resize("1234-567890-reef123", 30);
+        using var client = new ClustersApiClient(hc);
+        await client.Resize("1234-567890-reef123", 30);
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestTerminate()
-        {
-            var apiUri = new Uri(ClusterApiUri, "delete");
-            const string expectedRequest = "{\"cluster_id\":\"1234-567890-frays123\"}";
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK);
+    [TestMethod]
+    public async Task TestTerminate()
+    {
+        var apiUri = new Uri(ClusterApiUri, "delete");
+        const string expectedRequest = "{\"cluster_id\":\"1234-567890-frays123\"}";
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK);
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            await client.Terminate("1234-567890-frays123");
+        using var client = new ClustersApiClient(hc);
+        await client.Terminate("1234-567890-frays123");
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestDelete()
-        {
-            var apiUri = new Uri(ClusterApiUri, "permanent-delete");
-            const string expectedRequest = "{\"cluster_id\":\"1234-567890-frays123\"}";
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK);
+    [TestMethod]
+    public async Task TestDelete()
+    {
+        var apiUri = new Uri(ClusterApiUri, "permanent-delete");
+        const string expectedRequest = "{\"cluster_id\":\"1234-567890-frays123\"}";
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK);
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            await client.Delete("1234-567890-frays123");
+        using var client = new ClustersApiClient(hc);
+        await client.Delete("1234-567890-frays123");
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestGet()
-        {
-            var apiUri = new Uri(ClusterApiUri, "get");
-            const string expectedResponse = @"
+    [TestMethod]
+    public async Task TestGet()
+    {
+        var apiUri = new Uri(ClusterApiUri, "get");
+        const string expectedResponse = @"
                 {
                     ""cluster_id"": ""1234-567890-reef123"",
                     ""driver"": {
@@ -359,75 +359,75 @@ namespace Microsoft.Azure.Databricks.Client.Test
                 }
                 ";
 
-            var expected = JsonSerializer.Deserialize<ClusterInfo>(expectedResponse, Options);
+        var expected = JsonSerializer.Deserialize<ClusterInfo>(expectedResponse, Options);
 
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Get, new Uri(apiUri, "?cluster_id=1234-567890-reef123"))
-                .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json");
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Get, new Uri(apiUri, "?cluster_id=1234-567890-reef123"))
+            .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json");
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            var actual = await client.Get("1234-567890-reef123");
+        using var client = new ClustersApiClient(hc);
+        var actual = await client.Get("1234-567890-reef123");
 
-            Assert.AreEqual(expected, actual);
-        }
+        Assert.AreEqual(expected, actual);
+    }
 
-        [TestMethod]
-        public async Task TestPin()
-        {
-            var apiUri = new Uri(ClusterApiUri, "pin");
-            const string expectedRequest = "{\"cluster_id\":\"1234-567890-reef123\"}";
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK);
+    [TestMethod]
+    public async Task TestPin()
+    {
+        var apiUri = new Uri(ClusterApiUri, "pin");
+        const string expectedRequest = "{\"cluster_id\":\"1234-567890-reef123\"}";
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK);
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            await client.Pin("1234-567890-reef123");
+        using var client = new ClustersApiClient(hc);
+        await client.Pin("1234-567890-reef123");
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestUnPin()
-        {
-            var apiUri = new Uri(ClusterApiUri, "unpin");
-            const string expectedRequest = "{\"cluster_id\":\"1234-567890-reef123\"}";
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK);
+    [TestMethod]
+    public async Task TestUnPin()
+    {
+        var apiUri = new Uri(ClusterApiUri, "unpin");
+        const string expectedRequest = "{\"cluster_id\":\"1234-567890-reef123\"}";
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK);
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            await client.Unpin("1234-567890-reef123");
+        using var client = new ClustersApiClient(hc);
+        await client.Unpin("1234-567890-reef123");
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
 
-        [TestMethod]
-        public async Task TestList()
-        {
-            var apiUri = new Uri(ClusterApiUri, "list");
-            const string expectedResponse = @"
+    [TestMethod]
+    public async Task TestList()
+    {
+        var apiUri = new Uri(ClusterApiUri, "list");
+        const string expectedResponse = @"
                 {
                     ""clusters"": [{
                         ""cluster_id"": ""1234-567890-reef123"",
@@ -474,26 +474,26 @@ namespace Microsoft.Azure.Databricks.Client.Test
                 }
                 ";
 
-            var expected = JsonNode.Parse(expectedResponse)?["clusters"].Deserialize<IEnumerable<ClusterInfo>>(Options);
+        var expected = JsonNode.Parse(expectedResponse)?["clusters"].Deserialize<IEnumerable<ClusterInfo>>(Options);
 
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Get, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json");
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Get, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json");
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            var actual = await client.List();
-            CollectionAssert.AreEqual(expected?.ToList(), actual?.ToList());
-        }
+        using var client = new ClustersApiClient(hc);
+        var actual = await client.List();
+        CollectionAssert.AreEqual(expected?.ToList(), actual?.ToList());
+    }
 
-        [TestMethod]
-        public async Task TestListNodeTypes()
-        {
-            var apiUri = new Uri(ClusterApiUri, "list-node-types");
-            const string expectedResponse = @"
+    [TestMethod]
+    public async Task TestListNodeTypes()
+    {
+        var apiUri = new Uri(ClusterApiUri, "list-node-types");
+        const string expectedResponse = @"
                 {
                     ""node_types"": [{
                         ""node_type_id"": ""Standard_L80s_v2"",
@@ -527,26 +527,26 @@ namespace Microsoft.Azure.Databricks.Client.Test
                 }
                 ";
 
-            var expected = JsonNode.Parse(expectedResponse)?["node_types"].Deserialize<IEnumerable<NodeType>>(Options);
+        var expected = JsonNode.Parse(expectedResponse)?["node_types"].Deserialize<IEnumerable<NodeType>>(Options);
 
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Get, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json");
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Get, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json");
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            var actual = await client.ListNodeTypes();
-            CollectionAssert.AreEqual(expected?.ToList(), actual?.ToList());
-        }
+        using var client = new ClustersApiClient(hc);
+        var actual = await client.ListNodeTypes();
+        CollectionAssert.AreEqual(expected?.ToList(), actual?.ToList());
+    }
 
-        [TestMethod]
-        public async Task TestListSparkVersions()
-        {
-            var apiUri = new Uri(ClusterApiUri, "spark-versions");
-            const string expectedResponse = @"
+    [TestMethod]
+    public async Task TestListSparkVersions()
+    {
+        var apiUri = new Uri(ClusterApiUri, "spark-versions");
+        const string expectedResponse = @"
                 {
                     ""versions"": [{
                         ""key"": ""8.2.x-scala2.12"",
@@ -558,29 +558,29 @@ namespace Microsoft.Azure.Databricks.Client.Test
                 }
                 ";
 
-            var expected = JsonNode.Parse(expectedResponse)?["versions"]?.AsArray().ToDictionary(
-                e => e?["key"]?.GetValue<string>() ?? "",
-                e => e?["name"]?.GetValue<string>() ?? ""
-            );
+        var expected = JsonNode.Parse(expectedResponse)?["versions"]?.AsArray().ToDictionary(
+            e => e?["key"]?.GetValue<string>() ?? "",
+            e => e?["name"]?.GetValue<string>() ?? ""
+        );
 
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Get, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json");
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Get, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json");
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            var actual = await client.ListSparkVersions();
-            CollectionAssert.AreEqual(expected?.ToList(), actual?.ToList());
-        }
+        using var client = new ClustersApiClient(hc);
+        var actual = await client.ListSparkVersions();
+        CollectionAssert.AreEqual(expected?.ToList(), actual?.ToList());
+    }
 
-        [TestMethod]
-        public async Task TestEvents()
-        {
-            var apiUri = new Uri(ClusterApiUri, "events");
-            const string expectedRequest = @"
+    [TestMethod]
+    public async Task TestEvents()
+    {
+        var apiUri = new Uri(ClusterApiUri, "events");
+        const string expectedRequest = @"
                 {
                     ""cluster_id"": ""1234-567890-reef123"",
                     ""start_time"": 1617238800000,
@@ -591,7 +591,7 @@ namespace Microsoft.Azure.Databricks.Client.Test
                     ""event_types"": [""RUNNING""]
                 }
                 ";
-            const string expectedResponse = @"
+        const string expectedResponse = @"
                 {
                     ""events"": [{
                         ""cluster_id"": ""1234-567890-reef123"",
@@ -614,38 +614,37 @@ namespace Microsoft.Azure.Databricks.Client.Test
                 }
                 ";
 
-            var expected = JsonSerializer.Deserialize<EventsResponse>(expectedResponse, Options);
+        var expected = JsonSerializer.Deserialize<EventsResponse>(expectedResponse, Options);
 
-            var handler = CreateMockHandler();
-            handler
-                .SetupRequest(HttpMethod.Post, apiUri)
-                .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json");
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json");
 
-            var hc = handler.CreateClient();
-            hc.BaseAddress = BaseApiUri;
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
 
-            using var client = new ClustersApiClient(hc);
-            var actual = await client.Events(
-                "1234-567890-reef123",
-                DateTimeOffset.FromUnixTimeMilliseconds(1617238800000),
-                DateTimeOffset.FromUnixTimeMilliseconds(1619485200000),
-                ListOrder.DESC,
-                new[] { ClusterEventType.RUNNING },
-                5,
-                5
-            );
+        using var client = new ClustersApiClient(hc);
+        var actual = await client.Events(
+            "1234-567890-reef123",
+            DateTimeOffset.FromUnixTimeMilliseconds(1617238800000),
+            DateTimeOffset.FromUnixTimeMilliseconds(1619485200000),
+            ListOrder.DESC,
+            new[] { ClusterEventType.RUNNING },
+            5,
+            5
+        );
 
-            CollectionAssert.AreEqual(expected?.Events.ToList(), actual.Events.ToList());
-            Assert.AreEqual(expected?.TotalCount, actual.TotalCount);
-            Assert.AreEqual(expected?.HasNextPage, actual.HasNextPage);
-            Assert.AreEqual(expected?.NextPage, actual.NextPage);
+        CollectionAssert.AreEqual(expected?.Events.ToList(), actual.Events.ToList());
+        Assert.AreEqual(expected?.TotalCount, actual.TotalCount);
+        Assert.AreEqual(expected?.HasNextPage, actual.HasNextPage);
+        Assert.AreEqual(expected?.NextPage, actual.NextPage);
 
-            handler.VerifyRequest(
-                HttpMethod.Post,
-                apiUri,
-                GetMatcher(expectedRequest),
-                Times.Once()
-            );
-        }
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
     }
 }

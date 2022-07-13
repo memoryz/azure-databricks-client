@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Databricks.Client.Test
             }
         };
 
-        private static void AssertJsonDeepEquals(string expected, string actual)
+        protected static void AssertJsonDeepEquals(string expected, string actual)
         {
             Assert.AreEqual<EquatableJToken>(JToken.Parse(expected), JToken.Parse(actual));
         }

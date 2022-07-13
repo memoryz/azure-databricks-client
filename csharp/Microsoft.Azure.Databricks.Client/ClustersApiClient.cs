@@ -94,9 +94,11 @@ namespace Microsoft.Azure.Databricks.Client
             var clusterList = await HttpGet<JsonObject>(this.HttpClient, requestUri, cancellationToken)
                 .ConfigureAwait(false);
 
-            return clusterList.TryGetPropertyValue("clusters", out var clusters)
-                ? clusters.Deserialize<IEnumerable<ClusterInfo>>(Options)
-                : Enumerable.Empty<ClusterInfo>();
+            clusterList.TryGetPropertyValue("clusters", out var clustersNode);
+
+            return clustersNode
+                .Map(node => node.Deserialize<IEnumerable<ClusterInfo>>(Options))
+                .GetOrElse(Enumerable.Empty<ClusterInfo>);
         }
 
         public async Task Pin(string clusterId, CancellationToken cancellationToken = default)

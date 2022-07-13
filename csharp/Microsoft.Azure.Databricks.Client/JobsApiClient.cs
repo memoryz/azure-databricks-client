@@ -18,39 +18,55 @@ namespace Microsoft.Azure.Databricks.Client
         {
         }
 
-        public async Task<long> Create(JobSettings jobSettings, CancellationToken cancellationToken = default)
+        public async Task<long> Create(JobSettings jobSettings,
+            IEnumerable<AccessControlRequest> accessControlList = default,
+            CancellationToken cancellationToken = default)
         {
+            var request = JsonSerializer.SerializeToNode(jobSettings, Options)!.AsObject();
+
+            accessControlList.ForEach(acr =>
+            {
+                request.Add(new KeyValuePair<string, JsonNode>(
+                    "access_control_list",
+                    JsonSerializer.SerializeToNode(acr, Options)
+                ));
+            });
+
             var jobIdentifier =
-                await HttpPost<JobSettings, JsonObject>(this.HttpClient, $"{ApiVersion}/jobs/create", jobSettings, cancellationToken)
+                await HttpPost<JsonObject, JsonObject>(this.HttpClient, $"{ApiVersion}/jobs/create", request,
+                        cancellationToken)
                     .ConfigureAwait(false);
             return jobIdentifier["job_id"]!.GetValue<long>();
         }
 
-        //public async Task<IEnumerable<Job>> List(CancellationToken cancellationToken = default)
-        //{
-        //    string requestUri = $"{ApiVersion}/jobs/list";
-        //    var jobList = await HttpGet<JsonObject>(this.HttpClient, requestUri, cancellationToken).ConfigureAwait(false);
+        public async Task<JobList> List(int limit = 20, int offset = 0, bool expandTasks = false,
+            CancellationToken cancellationToken = default)
+        {
+            var requestUri = $"{ApiVersion}/jobs/list";
+            var response = await HttpGet<JsonObject>(this.HttpClient, requestUri, cancellationToken)
+                .ConfigureAwait(false);
 
-        //    if (jobList.TryGetPropertyValue("jobs", out var jobs))
-        //    {
-        //        return jobs.Deserialize<IEnumerable<Job>>(Options);
-        //    }
-        //    else
-        //    {
-        //        return Enumerable.Empty<Job>();
-        //    }
-        //}
+            response.TryGetPropertyValue("jobs", out var jobsNode);
+            var jobs = jobsNode
+                .Map(node => node.Deserialize<IEnumerable<Job>>(Options))
+                .GetOrElse(Enumerable.Empty<Job>);
+
+            response.TryGetPropertyValue("has_more", out var hasMoreNode);
+            var hasMore = hasMoreNode.Exists(node => node.GetValue<bool>());
+            
+            return new JobList {Jobs = jobs, HasMore = hasMore};
+        }
 
         public async Task Delete(long jobId, CancellationToken cancellationToken = default)
         {
             await HttpPost(this.HttpClient, $"{ApiVersion}/jobs/delete", new { job_id = jobId }, cancellationToken).ConfigureAwait(false);
         }
 
-        //public async Task<Job> Get(long jobId, CancellationToken cancellationToken = default)
-        //{
-        //    var requestUri = $"{ApiVersion}/jobs/get?job_id={jobId}";
-        //    return await HttpGet<Job>(this.HttpClient, requestUri, cancellationToken).ConfigureAwait(false);
-        //}
+        public async Task<Job> Get(long jobId, CancellationToken cancellationToken = default)
+        {
+            var requestUri = $"{ApiVersion}/jobs/get?job_id={jobId}";
+            return await HttpGet<Job>(this.HttpClient, requestUri, cancellationToken).ConfigureAwait(false);
+        }
 
         public async Task Reset(long jobId, JobSettings newSettings, CancellationToken cancellationToken = default)
         {

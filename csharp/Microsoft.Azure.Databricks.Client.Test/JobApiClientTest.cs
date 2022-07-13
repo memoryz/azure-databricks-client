@@ -139,6 +139,17 @@ public class JobApiClientTest : ApiClientTest
             }
             ";
 
+    private static IEnumerable<AccessControlRequest> CreateDefaultAccessControlRequest()
+    {
+        return new AccessControlRequest[]
+        {
+            new AccessControlRequestForUser
+                {PermissionLevel = JobPermissionLevel.CAN_MANAGE, UserName = "jsmith@example.com"},
+            new AccessControlRequestForGroup
+                {PermissionLevel = JobPermissionLevel.CAN_VIEW, GroupName = "readonly-group@example.com"}
+        };
+    }
+
     private static JobSettings CreateDefaultJobSettings()
     {
         var cluster = new ClusterAttributes()
@@ -243,13 +254,6 @@ public class JobApiClientTest : ApiClientTest
             },
             MaxConcurrentRuns = 10,
             Format = JobFormat.MULTI_TASK,
-            AccessControlList = new AccessControlRequest[]
-            {
-                new AccessControlRequestForUser
-                    {PermissionLevel = JobPermissionLevel.CAN_MANAGE, UserName = "jsmith@example.com"},
-                new AccessControlRequestForGroup
-                    {PermissionLevel = JobPermissionLevel.CAN_VIEW, GroupName = "readonly-group@example.com"}
-            },
             Tasks = new[]
             {
                 task1, task2, task3
@@ -262,7 +266,7 @@ public class JobApiClientTest : ApiClientTest
     #endregion
 
     [TestMethod]
-    public async Task TestCreateJob()
+    public async Task TestCreate()
     {
         var apiUri = new Uri(JobsApiUri, "create");
         var expectedResponse = new { job_id = 11223344 };
@@ -280,8 +284,8 @@ public class JobApiClientTest : ApiClientTest
         using var client = new JobsApiClient(hc);
 
         var job = CreateDefaultJobSettings();
-
-        var jobId = await client.Create(job);
+        var acr = CreateDefaultAccessControlRequest();
+        var jobId = await client.Create(job, acr);
         Assert.AreEqual(expectedResponse.job_id, jobId);
 
         handler.VerifyRequest(
@@ -293,7 +297,7 @@ public class JobApiClientTest : ApiClientTest
     }
 
     [TestMethod]
-    public async Task TestResetJob()
+    public async Task TestReset()
     {
         var apiUri = new Uri(JobsApiUri, "reset");
 
@@ -309,7 +313,6 @@ public class JobApiClientTest : ApiClientTest
         using var client = new JobsApiClient(hc);
         
         var job = CreateDefaultJobSettings();
-        job.AccessControlList = null;
 
         await client.Reset(11223344, job);
 
@@ -326,7 +329,7 @@ public class JobApiClientTest : ApiClientTest
     }
 
     [TestMethod]
-    public async Task TestUpdateJob()
+    public async Task TestUpdate()
     {
         var apiUri = new Uri(JobsApiUri, "update");
 
@@ -342,7 +345,6 @@ public class JobApiClientTest : ApiClientTest
         using var client = new JobsApiClient(hc);
 
         var job = CreateDefaultJobSettings();
-        job.AccessControlList = null;
 
         await client.Update(11223344, job, new []{ "libraries", "schedule" });
 
@@ -364,7 +366,7 @@ public class JobApiClientTest : ApiClientTest
     }
 
     [TestMethod]
-    public async Task TestDeleteJob()
+    public async Task TestDelete()
     {
         const string expectedRequest = @"
             {
@@ -389,6 +391,91 @@ public class JobApiClientTest : ApiClientTest
             HttpMethod.Post,
             apiUri,
             GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
+
+    [TestMethod]
+    public async Task TestGet()
+    {
+        var apiUri = new Uri(JobsApiUri, "get");
+
+        var expectedResponse = new Job
+        {
+            CreatedTime = DateTimeOffset.FromUnixTimeMilliseconds(0),
+            CreatorUserName = "user.name@databricks.com",
+            JobId = 11223344,
+            RunAsUserName = "user.name@databricks.com",
+            Settings = CreateDefaultJobSettings()
+        };
+
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Get, new Uri(apiUri, "?job_id=11223344"))
+            .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, Options), "application/json")
+            .Verifiable();
+
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
+
+        using var client = new JobsApiClient(hc);
+
+        var job = await client.Get(11223344);
+
+        AssertJsonDeepEquals(
+            JsonSerializer.Serialize(expectedResponse, Options),
+            JsonSerializer.Serialize(job, Options)
+        );
+
+        handler.VerifyRequest(
+            HttpMethod.Get,
+            new Uri(apiUri, "?job_id=11223344"),
+            Times.Once()
+        );
+    }
+
+    [TestMethod]
+    public async Task TestList()
+    {
+        var apiUri = new Uri(JobsApiUri, "list");
+
+        var expectedResponse = new JobList
+            {
+                Jobs = new[]
+                {
+                    new Job
+                    {
+                        CreatedTime = DateTimeOffset.FromUnixTimeMilliseconds(0),
+                        CreatorUserName = "user.name@databricks.com",
+                        JobId = 11223344,
+                        RunAsUserName = "user.name@databricks.com",
+                        Settings = CreateDefaultJobSettings()
+                    }
+                },
+                HasMore = false
+            };
+
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Get, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, JsonSerializer.Serialize(expectedResponse, Options), "application/json")
+            .Verifiable();
+
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
+
+        using var client = new JobsApiClient(hc);
+
+        var job = await client.List();
+
+        AssertJsonDeepEquals(
+            JsonSerializer.Serialize(expectedResponse, Options),
+            JsonSerializer.Serialize(job, Options)
+        );
+
+        handler.VerifyRequest(
+            HttpMethod.Get,
+            apiUri,
             Times.Once()
         );
     }
