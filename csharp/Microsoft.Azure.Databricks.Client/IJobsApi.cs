@@ -18,10 +18,10 @@ namespace Microsoft.Azure.Databricks.Client
         ///// </summary>
         //Task<IEnumerable<Job>> List(CancellationToken cancellationToken = default);
 
-        ///// <summary>
-        ///// Deletes the job and sends an email to the addresses specified in JobSettings.email_notifications. No action will occur if the job has already been removed. After the job is removed, neither its details or its run history will be visible via the Jobs UI or API. The job is guaranteed to be removed upon completion of this request. However, runs that were active before the receipt of this request may still be active. They will be terminated asynchronously.
-        ///// </summary>
-        //Task Delete(long jobId, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Deletes the job and sends an email to the addresses specified in JobSettings.email_notifications. No action will occur if the job has already been removed. After the job is removed, neither its details or its run history will be visible via the Jobs UI or API. The job is guaranteed to be removed upon completion of this request. However, runs that were active before the receipt of this request may still be active. They will be terminated asynchronously.
+        /// </summary>
+        Task Delete(long jobId, CancellationToken cancellationToken = default);
 
         ///// <summary>
         ///// Retrieves information about a single job.
@@ -40,14 +40,14 @@ namespace Microsoft.Azure.Databricks.Client
         /// </param>
         Task Reset(long jobId, JobSettings newSettings, CancellationToken cancellationToken = default);
 
-        ///// <summary>
-        ///// Add, change, or remove specific settings of an existing job. Use the Reset endpoint to overwrite all job settings.
-        ///// </summary>
-        ///// <param name="jobId">The canonical identifier of the job to update. This field is required.</param>
-        ///// <param name="newSettings">The new settings for the job. Any top-level fields specified in new_settings are completely replaced. Partially updating nested fields is not supported. Changes to the field JobSettings.timeout_seconds are applied to active runs.Changes to other fields are applied to future runs only.</param>
-        ///// <param name="fieldsToRemove">Remove top-level fields in the job settings. Removing nested fields is not supported. This field is optional.</param>
-        //Task Update(long jobId, JobSettings newSettings, string[] fieldsToRemove = default,
-        //    CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Add, change, or remove specific settings of an existing job. Use the Reset endpoint to overwrite all job settings.
+        /// </summary>
+        /// <param name="jobId">The canonical identifier of the job to update. This field is required.</param>
+        /// <param name="newSettings">The new settings for the job. Any top-level fields specified in new_settings are completely replaced. Partially updating nested fields is not supported. Changes to the field JobSettings.timeout_seconds are applied to active runs.Changes to other fields are applied to future runs only.</param>
+        /// <param name="fieldsToRemove">Remove top-level fields in the job settings. Removing nested fields is not supported. This field is optional.</param>
+        Task Update(long jobId, JobSettings newSettings, string[] fieldsToRemove = default,
+            CancellationToken cancellationToken = default);
 
         ///// <summary>
         ///// Runs the job now, and returns the run_id of the triggered run.

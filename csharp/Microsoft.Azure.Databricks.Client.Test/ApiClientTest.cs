@@ -24,12 +24,12 @@ namespace Microsoft.Azure.Databricks.Client.Test
             }
         };
 
-        protected static void AssertJsonDeepEquals(string expected, string actual)
+        private static void AssertJsonDeepEquals(string expected, string actual)
         {
             Assert.AreEqual<EquatableJToken>(JToken.Parse(expected), JToken.Parse(actual));
         }
 
-        protected static void RequestContentMatch(HttpRequestMessage request, string expected)
+        private static void RequestContentMatch(HttpRequestMessage request, string expected)
         {
             string actual = request.Content?.ReadAsStringAsync().Result!;
             AssertJsonDeepEquals(expected, actual);
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Databricks.Client.Test
             };
         }
 
-        protected Mock<HttpMessageHandler> CreateMockHandler()
+        protected static Mock<HttpMessageHandler> CreateMockHandler()
         {
             Mock<HttpMessageHandler> handler = new();
             handler
