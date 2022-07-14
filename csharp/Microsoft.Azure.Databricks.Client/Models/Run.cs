@@ -4,6 +4,98 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client.Models;
 
+public record RunOutput
+{
+    /// <summary>
+    /// The output of a notebook task, if available. A notebook
+    /// task that terminates (either successfully or with a
+    /// failure) without calling `dbutils.notebook.exit()` is
+    /// considered to have an empty output. This field is set but
+    /// its result value is empty. Azure Databricks restricts this
+    /// API to return the first 5 MB of the output. To return a
+    /// larger result, use the
+    /// [ClusterLogConf](https://docs.microsoft.com/azure/databricks/dev-tools/api/latest/clusters#clusterlogconf)
+    /// field to configure log storage for the job cluster.
+    /// </summary>
+    [JsonPropertyName("notebook_output")]
+    public NotebookOutput NotebookOutput { get; set; }
+
+    /// <summary>
+    /// The output from tasks that write to cluster logs such as
+    /// [SparkJarTask](https://docs.microsoft.com/azure/databricks/dev-tools/api/latest/jobs#/components/schemas/SparkJarTask)
+    /// or
+    /// [SparkPythonTask](https://docs.microsoft.com/azure/databricks/dev-tools/api/latest/jobs#/components/schemas/SparkPythonTask.
+    /// Azure Databricks restricts this API to return the last 5
+    /// MB of these logs. To return a larger result, use the
+    /// [ClusterLogConf](https://docs.microsoft.com/azure/databricks/dev-tools/api/latest/clusters#clusterlogconf)
+    /// field to configure log storage for the job cluster.
+    /// </summary>
+    [JsonPropertyName("logs")]
+    public string Logs { get; set; }
+
+    /// <summary>
+    /// Whether the logs are truncated.
+    /// </summary>
+    [JsonPropertyName("logs_truncated")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+    public bool LogsTruncated { get; set; }
+
+    /// <summary>
+    /// An error message indicating why a task failed or why
+    /// output is not available. The message is unstructured, and
+    /// its exact format is subject to change.
+    /// </summary>
+    /// <example>'ZeroDivisionError: integer division or modulo by zero'</example>
+    [JsonPropertyName("error")]
+    public string Error { get; set; }
+
+    /// <summary>
+    /// If there was an error executing the run, this field
+    /// contains any available stack traces.
+    /// </summary>
+    /// <example>
+    /// ---------------------------------------------------------------------------
+    /// 
+    /// Exception                                 Traceback (most recent call last)
+    ///       1 numerator = 42
+    ///       2 denominator = 0
+    /// ----&gt; 3 return numerator / denominator
+    /// 
+    /// 
+    /// ZeroDivisionError: integer division or modulo by zero
+    /// </example>
+    [JsonPropertyName("error_trace")]
+    public string ErrorTrace { get; set; }
+
+    /// <summary>
+    /// All details of the run except for its output.
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    public Run Metadata { get; set; }
+}
+
+public record NotebookOutput
+{
+    /// <summary>
+    /// The value passed to
+    /// [dbutils.notebook.exit()](https://docs.microsoft.com/azure/databricks/notebooks/notebook-workflows#notebook-workflows-exit).
+    /// Azure Databricks restricts this API to return the first 5 MB of the
+    /// value. For a larger result, your job can store the results in a
+    /// cloud storage service. This field is absent if
+    /// `dbutils.notebook.exit()` was never called.
+    /// </summary>
+    /// <example>An arbitrary string passed by calling dbutils.notebook.exit(...)</example>
+    [JsonPropertyName("result")]
+    public string Result { get; set; }
+
+    /// <summary>
+    /// Whether or not the result was truncated.
+    /// </summary>
+    [JsonPropertyName("truncated")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+    public bool Truncated { get; set; }
+}
+
 public record RunTask : BaseTask
 {
     /// <summary>

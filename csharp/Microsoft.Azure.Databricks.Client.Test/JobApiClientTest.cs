@@ -1,11 +1,9 @@
-﻿using System.Formats.Asn1;
-using Microsoft.Azure.Databricks.Client.Models;
+﻿using Microsoft.Azure.Databricks.Client.Models;
 using Moq.Contrib.HttpClient;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Castle.Core.Internal;
-using Castle.DynamicProxy.Generators;
 using Moq;
 
 namespace Microsoft.Azure.Databricks.Client.Test;
@@ -845,7 +843,6 @@ public class JobApiClientTest : ApiClientTest
             }
         };
 
-
         var handler = CreateMockHandler();
         handler
             .SetupRequest(HttpMethod.Get, new Uri(apiUri, "?run_id=455644833&include_history=true"))
@@ -998,6 +995,103 @@ public class JobApiClientTest : ApiClientTest
 
         using var client = new JobsApiClient(hc);
         await client.RunsCancel(455644833);
+        handler.VerifyRequest(HttpMethod.Post, apiUri, GetMatcher(expectedRequest), Times.Once());
+    }
+
+    [TestMethod]
+    public async Task TestRunsGetOutput()
+    {
+        var apiUri = new Uri(JobsApiUri, "runs/get-output");
+        var requestUri = new Uri(apiUri, "?run_id=455644833");
+        const string response = @"
+            {
+                ""notebook_output"": {
+                    ""result"": ""An arbitrary string passed by calling dbutils.notebook.exit(...)"",
+                    ""truncated"": false
+                },
+                ""logs"": ""Hello World!"",
+                ""logs_truncated"": true,
+                ""error"": ""ZeroDivisionError: integer division or modulo by zero"",
+                ""error_trace"": ""---------------------------------------------------------------------------\nException Traceback (most recent call last)\n 1 numerator = 42\n 2 denominator = 0\n----> 3 return numerator / denominator\n\nZeroDivisionError: integer division or modulo by zero"",
+                ""metadata"": {
+                    ""git_source"": null
+                }
+            }
+        ";
+
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Get, requestUri)
+            .ReturnsResponse(HttpStatusCode.OK, response, "application/json")
+            .Verifiable();
+
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
+
+        using var client = new JobsApiClient(hc);
+
+        var runOutput = await client.RunsGetOutput(455644833);
+        AssertJsonDeepEquals(response, JsonSerializer.Serialize(runOutput, Options));
+
+        handler.VerifyRequest(
+            HttpMethod.Get,
+            requestUri,
+            Times.Once()
+        );
+    }
+
+    [TestMethod]
+    public async Task TestRunsRepair()
+    {
+        var apiUri = new Uri(JobsApiUri, "runs/repair");
+
+        const string expectedRequest = @"
+            {
+              ""run_id"": 455644833,
+              ""rerun_tasks"": [
+                ""task0"",
+                ""task1""
+              ],
+              ""latest_repair_id"": 734650698524280,
+              ""jar_params"": [
+                ""john"",
+                ""doe"",
+                ""35""
+              ]
+            }
+        ";
+
+        const string expectedResponse = @"
+            {
+              ""repair_id"": 734650698524281
+            }
+        ";
+
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json")
+            .Verifiable();
+
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
+
+        using var client = new JobsApiClient(hc);
+        var repairInput = new RepairRunInput
+        {
+            LatestRepairId = 734650698524280,
+            RunId = 455644833,
+            RerunTasks = new[] {"task0", "task1"}
+        };
+
+        var repairParam = new RunParameters
+        {
+            JarParams = new List<string> {"john", "doe", "35"}
+        };
+
+        var repairId = await client.RunsRepair(repairInput, repairParam);
+
+        Assert.AreEqual(734650698524281, repairId);
         handler.VerifyRequest(HttpMethod.Post, apiUri, GetMatcher(expectedRequest), Times.Once());
     }
 }
