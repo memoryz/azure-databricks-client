@@ -4,14 +4,14 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Azure.Databricks.Client.Models;
 
-public record JobRunBaseSettings<TTaskSetting> : IJsonOnDeserialized
-    where TTaskSetting : TaskSettings
+public abstract record JobRunBaseSettings<TTaskSetting> : IJsonOnDeserialized
+    where TTaskSetting : TaskSettings, new()
 {
     /// <summary>
     /// A list of task specifications to be executed by this job.
     /// </summary>
     [JsonPropertyName("tasks")]
-    public IEnumerable<TTaskSetting> Tasks { get; set; }
+    public List<TTaskSetting> Tasks { get; set; } = new();
 
     public void OnDeserialized()
     {
@@ -20,7 +20,7 @@ public record JobRunBaseSettings<TTaskSetting> : IJsonOnDeserialized
             task => task
         );
 
-        foreach (var task in Tasks)
+        foreach (var task in this.Tasks.Where(task => task.DependsOn != null))
         {
             task.DependsOn =
                 from dep in task.DependsOn.GetOrElse(Enumerable.Empty<HasTaskKey>)
@@ -40,6 +40,88 @@ public record JobRunBaseSettings<TTaskSetting> : IJsonOnDeserialized
     [JsonPropertyName("git_source")]
     [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
     public GitSource GitSource { get; set; }
+
+    public TTaskSetting AddTask(string taskKey, SparkJarTask task,
+        IEnumerable<HasTaskKey> dependsOn = default, int? timeoutSeconds = default)
+    {
+        var taskSetting = new TTaskSetting {
+            TaskKey = taskKey,
+            SparkJarTask = task,
+            DependsOn = dependsOn,
+            TimeoutSeconds = timeoutSeconds
+        };
+
+        this.Tasks.Add(taskSetting);
+        return taskSetting;
+    }
+
+    public TTaskSetting AddTask(string taskKey, SparkPythonTask task,
+        IEnumerable<HasTaskKey> dependsOn = default, int? timeoutSeconds = default)
+    {
+        var taskSetting = new TTaskSetting { 
+            TaskKey = taskKey, 
+            SparkPythonTask = task,
+            DependsOn = dependsOn,
+            TimeoutSeconds = timeoutSeconds
+        };
+
+        this.Tasks.Add(taskSetting);
+        return taskSetting;
+    }
+
+    public TTaskSetting AddTask(string taskKey, NotebookTask task,
+        IEnumerable<HasTaskKey> dependsOn = default, int? timeoutSeconds = default)
+    {
+        var taskSetting = new TTaskSetting { 
+            TaskKey = taskKey, 
+            NotebookTask = task,
+            DependsOn = dependsOn,
+            TimeoutSeconds = timeoutSeconds
+        };
+        this.Tasks.Add(taskSetting);
+        return taskSetting;
+    }
+    public TTaskSetting AddTask(string taskKey, SparkSubmitTask task,
+        IEnumerable<HasTaskKey> dependsOn = default, int? timeoutSeconds = default)
+    {
+        var taskSetting = new TTaskSetting {
+            TaskKey = taskKey,
+            SparkSubmitTask = task,
+            DependsOn = dependsOn,
+            TimeoutSeconds = timeoutSeconds
+        };
+
+        this.Tasks.Add(taskSetting);
+        return taskSetting;
+    }
+
+    public TTaskSetting AddTask(string taskKey, PipelineTask task,
+        IEnumerable<HasTaskKey> dependsOn = default, int? timeoutSeconds = default)
+    {
+        var taskSetting = new TTaskSetting {
+            TaskKey = taskKey,
+            PipelineTask = task,
+            DependsOn = dependsOn,
+            TimeoutSeconds = timeoutSeconds
+        };
+        this.Tasks.Add(taskSetting);
+        return taskSetting;
+    }
+
+    public TTaskSetting AddTask(string taskKey, PythonWheelTask task,
+        IEnumerable<HasTaskKey> dependsOn = default, int? timeoutSeconds = default)
+    {
+        var taskSetting = new TTaskSetting
+        {
+            TaskKey = taskKey,
+            PythonWheelTask = task,
+            DependsOn = dependsOn,
+            TimeoutSeconds = timeoutSeconds
+        };
+
+        this.Tasks.Add(taskSetting);
+        return taskSetting;
+    }
 }
 
 public record JobCluster

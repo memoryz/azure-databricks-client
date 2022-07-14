@@ -8,7 +8,7 @@ public static class NullableExt
     /// <summary>
     /// Apply the given `action` to the nullable's value, if it is not null. Otherwise, do nothing.
     /// </summary>
-    public static void ForEach<T>(this T? source, Action<T> action) where T : struct
+    public static void Iter<T>(this T? source, Action<T> action) where T : struct
     {
         if (source != null)
         {
@@ -19,7 +19,7 @@ public static class NullableExt
     /// <summary>
     /// Apply the given `action` to the nullable's value, if it is not null. Otherwise, do nothing.
     /// </summary>
-    public static void ForEach<T>(this T? source, Action<T> action) where T : class
+    public static void Iter<T>(this T? source, Action<T> action) where T : class
     {
         if (source != null)
         {
@@ -30,7 +30,9 @@ public static class NullableExt
     /// <summary>
     /// Returns a nullable containing the result of applying `func` to this nullable's value if this nullable is nonempty.
     /// </summary>
-    public static TOut? Map<TIn, TOut>(this TIn? source, Func<TIn, TOut> func) where TIn : class where TOut : class
+    public static TOut? Map<TIn, TOut>(this TIn? source, Func<TIn, TOut> func) 
+        where TIn : class 
+        where TOut : class
     {
         return source switch
         {

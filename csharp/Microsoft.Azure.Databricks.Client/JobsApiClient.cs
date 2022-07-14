@@ -22,8 +22,8 @@ namespace Microsoft.Azure.Databricks.Client
             CancellationToken cancellationToken = default)
         {
             var request = JsonSerializer.SerializeToNode(jobSettings, Options)!.AsObject();
-
-            accessControlList.ForEach(
+            
+            accessControlList.Iter(
                 acr => request.Add("access_control_list", JsonSerializer.SerializeToNode(acr, Options))
             );
 
@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Databricks.Client
             var request = JsonSerializer.SerializeToNode(runParams, Options)!.AsObject();
 
             request.Add("job_id", jobId);
-            idempotencyToken.ForEach(token => request.Add("idempotency_token", token));
+            idempotencyToken.Iter(token => request.Add("idempotency_token", token));
 
             var result = await HttpPost<JsonObject, RunIdentifier>(
                 this.HttpClient, $"{ApiVersion}/jobs/run-now", request, cancellationToken
@@ -98,8 +98,8 @@ namespace Microsoft.Azure.Databricks.Client
             CancellationToken cancellationToken = default)
         {
             var request = JsonSerializer.SerializeToNode(settings, Options)!.AsObject();
-            idempotencyToken.ForEach(token => request.Add("idempotency_token", token));
-            accessControlList.ForEach(
+            idempotencyToken.Iter(token => request.Add("idempotency_token", token));
+            accessControlList.Iter(
                 acr => request.Add("access_control_list", JsonSerializer.SerializeToNode(acr, Options))
             );
 
@@ -143,11 +143,13 @@ namespace Microsoft.Azure.Databricks.Client
         //    return await HttpGet<RunList>(this.HttpClient, url, cancellationToken).ConfigureAwait(false);
         //}
 
-        //public async Task<Run> RunsGet(long runId, CancellationToken cancellationToken = default)
-        //{
-        //    var url = $"{ApiVersion}/jobs/runs/get?run_id={runId}";
-        //    return await HttpGet<Run>(this.HttpClient, url, cancellationToken).ConfigureAwait(false);
-        //}
+        public async Task<(Run, RepairHistory)> RunsGet(long runId, bool includeHistory = default,
+            CancellationToken cancellationToken = default)
+        {
+            var url = $"{ApiVersion}/jobs/runs/get?run_id={runId}&include_history={JsonValue.Create(includeHistory)}";
+            var response = await HttpGet<JsonObject>(this.HttpClient, url, cancellationToken).ConfigureAwait(false);
+            return (response.Deserialize<Run>(Options), response.Deserialize<RepairHistory>(Options));
+        }
 
         //public async Task RunsCancel(long runId, CancellationToken cancellationToken = default)
         //{

@@ -81,11 +81,12 @@ namespace Microsoft.Azure.Databricks.Client
         //Task<RunList> RunsList(long? jobId = null, int offset = 0, int limit = 20, bool activeOnly = false,
         //    bool completedOnly = false, /*RunType? runType = null, */ CancellationToken cancellationToken = default);
 
-        ///// <summary>
-        ///// Retrieves the metadata of a run.
-        ///// </summary>
-        ///// <param name="runId">The canonical identifier of the run for which to retrieve the metadata. This field is required.</param>
-        //Task<Run> RunsGet(long runId, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Retrieves the metadata of a run.
+        /// </summary>
+        /// <param name="runId">The canonical identifier of the run for which to retrieve the metadata. This field is required.</param>
+        /// <param name="includeHistory">Whether to include the repair history in the response.</param>
+        Task<(Run, RepairHistory)> RunsGet(long runId, bool includeHistory = default, CancellationToken cancellationToken = default);
 
         ///// <summary>
         ///// Cancels a run. The run is canceled asynchronously, so when this request completes, the run may still be running. The run will be terminated shortly. If the run is already in a terminal life_cycle_state, this method is a no-op.

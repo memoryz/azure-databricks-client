@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Databricks.Client.Converters
 
         public override void Write(Utf8JsonWriter writer, DateTimeOffset? value, JsonSerializerOptions options)
         {
-            value.ForEach(v => writer.WriteNumberValue(v.ToUnixTimeMilliseconds()));
+            value.Iter(v => writer.WriteNumberValue(v.ToUnixTimeMilliseconds()));
         }
     }
 }

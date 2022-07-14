@@ -1,8 +1,10 @@
-﻿using Microsoft.Azure.Databricks.Client.Models;
+﻿using System.Formats.Asn1;
+using Microsoft.Azure.Databricks.Client.Models;
 using Moq.Contrib.HttpClient;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Castle.DynamicProxy.Generators;
 using Moq;
 
 namespace Microsoft.Azure.Databricks.Client.Test;
@@ -23,7 +25,6 @@ public class JobApiClientTest : ApiClientTest
                 ""tasks"": [{
                         ""task_key"": ""Sessionize"",
                         ""description"": ""Extracts session data from events"",
-                        ""depends_on"": [],
                         ""existing_cluster_id"": ""0923-164208-meows279"",
                         ""spark_jar_task"": {
                             ""main_class_name"": ""com.databricks.Sessionize"",
@@ -40,7 +41,6 @@ public class JobApiClientTest : ApiClientTest
                     {
                         ""task_key"": ""Orders_Ingest"",
                         ""description"": ""Ingests order data"",
-                        ""depends_on"": [],
                         ""job_cluster_key"": ""auto_scaling_cluster"",
                         ""spark_jar_task"": {
                             ""main_class_name"": ""com.databricks.OrdersIngest"",
@@ -144,7 +144,6 @@ public class JobApiClientTest : ApiClientTest
                 ""run_name"": ""A multitask job run"",
                 ""tasks"": [{
                         ""task_key"": ""Sessionize"",
-                        ""depends_on"": [],
                         ""existing_cluster_id"": ""0923-164208-meows279"",
                         ""spark_jar_task"": {
                             ""main_class_name"": ""com.databricks.Sessionize"",
@@ -157,7 +156,6 @@ public class JobApiClientTest : ApiClientTest
                     },
                     {
                         ""task_key"": ""Orders_Ingest"",
-                        ""depends_on"": [],
                         ""existing_cluster_id"": ""0923-164208-meows279"",
                         ""spark_jar_task"": {
                             ""main_class_name"": ""com.databricks.OrdersIngest"",
@@ -244,70 +242,44 @@ public class JobApiClientTest : ApiClientTest
     private static RunSubmitSettings CreateDefaultRunSubmitSettings()
     {
         var cluster = CreateDefaultJobCluster();
-
-        var task1 = new RunSubmitTaskSettings
-        {
-            TaskKey = "Sessionize",
-            ExistingClusterId = "0923-164208-meows279",
-            SparkJarTask = new SparkJarTask
-            {
-                MainClassName = "com.databricks.Sessionize",
-                Parameters = new List<string> {"--data", "dbfs:/path/to/data.json"}
-            },
-            Libraries = new List<Library>
-            {
-                new JarLibrary
-                {
-                    Jar = "dbfs:/mnt/databricks/Sessionize.jar"
-                }
-            },
-            TimeoutSeconds = 86400
-        };
-
-        var task2 = new RunSubmitTaskSettings
-        {
-            TaskKey = "Orders_Ingest",
-            ExistingClusterId = "0923-164208-meows279",
-            SparkJarTask = new SparkJarTask
-            {
-                MainClassName = "com.databricks.OrdersIngest",
-                Parameters = new List<string> { "--data", "dbfs:/path/to/order-data.json" }
-            },
-            Libraries = new List<Library>
-            {
-                new JarLibrary
-                {
-                    Jar = "dbfs:/mnt/databricks/OrderIngest.jar"
-                }
-            },
-            TimeoutSeconds = 86400
-        };
-
-        var task3 = new RunSubmitTaskSettings
-        {
-            TaskKey = "Match",
-            DependsOn = new[] { task2, task1 },
-            NewCluster = cluster,
-            NotebookTask = new NotebookTask
-            {
-                NotebookPath = "/Users/user.name@databricks.com/Match",
-                BaseParameters = new Dictionary<string, string>
-                {
-                    {"name", "John Doe"}, {"age", "35"}
-                }
-            },
-            TimeoutSeconds = 86400
-        };
-
         var runSubmit = new RunSubmitSettings
         {
             RunName = "A multitask job run",
-            TimeoutSeconds = 86400,
-            Tasks = new[]
+            TimeoutSeconds = 86400
+        };
+
+        var sessionizeTask = new SparkJarTask
+        {
+            MainClassName = "com.databricks.Sessionize",
+            Parameters = new List<string> {"--data", "dbfs:/path/to/data.json"}
+        };
+
+        var task1 = runSubmit.AddTask("Sessionize", sessionizeTask, timeoutSeconds: 86400)
+            .AttachLibrary(new JarLibrary {Jar = "dbfs:/mnt/databricks/Sessionize.jar"})
+            .WithExistingClusterId("0923-164208-meows279");
+
+        var ingestTask = new SparkJarTask
+        {
+            MainClassName = "com.databricks.OrdersIngest",
+            Parameters = new List<string> {"--data", "dbfs:/path/to/order-data.json"}
+        };
+
+
+        var task2 = runSubmit.AddTask("Orders_Ingest", ingestTask, timeoutSeconds: 86400)
+            .AttachLibrary(new JarLibrary {Jar = "dbfs:/mnt/databricks/OrderIngest.jar"})
+            .WithExistingClusterId("0923-164208-meows279");
+
+        var matchTask = new NotebookTask
+        {
+            NotebookPath = "/Users/user.name@databricks.com/Match",
+            BaseParameters = new Dictionary<string, string>
             {
-                task1, task2, task3
+                {"name", "John Doe"}, {"age", "35"}
             }
         };
+
+        runSubmit.AddTask("Match", matchTask, new[] {task2, task1}, timeoutSeconds: 86400)
+            .WithNewCluster(cluster);
 
         return runSubmit;
     }
@@ -315,72 +287,6 @@ public class JobApiClientTest : ApiClientTest
     private static JobSettings CreateDefaultJobSettings()
     {
         var cluster = CreateDefaultJobCluster();
-
-        var task1 = new JobTaskSettings
-        {
-            TaskKey = "Sessionize",
-            Description = "Extracts session data from events",
-            ExistingClusterId = "0923-164208-meows279",
-            SparkJarTask = new SparkJarTask
-            {
-                MainClassName = "com.databricks.Sessionize",
-                Parameters = new List<string> {"--data", "dbfs:/path/to/data.json"}
-            },
-            Libraries = new List<Library>
-            {
-                new JarLibrary
-                {
-                    Jar = "dbfs:/mnt/databricks/Sessionize.jar"
-                }
-            },
-            TimeoutSeconds = 86400,
-            MaxRetries = 3,
-            MinRetryIntervalMilliSeconds = 2000,
-            RetryOnTimeout = false
-        };
-
-        var task2 = new JobTaskSettings
-        {
-            TaskKey = "Orders_Ingest",
-            Description = "Ingests order data",
-            JobClusterKey = "auto_scaling_cluster",
-            SparkJarTask = new SparkJarTask
-            {
-                MainClassName = "com.databricks.OrdersIngest",
-                Parameters = new List<string> {"--data", "dbfs:/path/to/order-data.json"}
-            },
-            Libraries = new List<Library>
-            {
-                new JarLibrary
-                {
-                    Jar = "dbfs:/mnt/databricks/OrderIngest.jar"
-                }
-            },
-            TimeoutSeconds = 86400,
-            MaxRetries = 3,
-            MinRetryIntervalMilliSeconds = 2000,
-            RetryOnTimeout = false
-        };
-
-        var task3 = new JobTaskSettings
-        {
-            TaskKey = "Match",
-            Description = "Matches orders with user sessions",
-            DependsOn = new[] {task2, task1},
-            NewCluster = cluster,
-            NotebookTask = new NotebookTask
-            {
-                NotebookPath = "/Users/user.name@databricks.com/Match",
-                BaseParameters = new Dictionary<string, string>
-                {
-                    {"name", "John Doe"}, {"age", "35"}
-                }
-            },
-            TimeoutSeconds = 86400,
-            MaxRetries = 3,
-            MinRetryIntervalMilliSeconds = 2000,
-            RetryOnTimeout = false
-        };
 
         var job = new JobSettings
         {
@@ -409,12 +315,46 @@ public class JobApiClientTest : ApiClientTest
                 TimezoneId = "Europe/London"
             },
             MaxConcurrentRuns = 10,
-            Format = JobFormat.MULTI_TASK,
-            Tasks = new[]
+            Format = JobFormat.MULTI_TASK
+        };
+
+        var sessionizeTask = new SparkJarTask
+        {
+            MainClassName = "com.databricks.Sessionize",
+            Parameters = new List<string> { "--data", "dbfs:/path/to/data.json" }
+        };
+
+        var task1 = job.AddTask("Sessionize", sessionizeTask, timeoutSeconds: 86400)
+            .WithRetry(3, 2000, false)
+            .AttachLibrary(new JarLibrary {Jar = "dbfs:/mnt/databricks/Sessionize.jar"})
+            .WithExistingClusterId("0923-164208-meows279")
+            .WithDescription("Extracts session data from events");
+
+        var ingestTask = new SparkJarTask
+        {
+            MainClassName = "com.databricks.OrdersIngest",
+            Parameters = new List<string> { "--data", "dbfs:/path/to/order-data.json" }
+        };
+
+        var task2 = job.AddTask("Orders_Ingest", ingestTask, timeoutSeconds: 86400)
+            .WithJobClusterKey("auto_scaling_cluster")
+            .WithRetry(3, 2000, false)
+            .AttachLibrary(new JarLibrary { Jar = "dbfs:/mnt/databricks/OrderIngest.jar" })
+            .WithDescription("Ingests order data");
+
+        var matchTask = new NotebookTask
+        {
+            NotebookPath = "/Users/user.name@databricks.com/Match",
+            BaseParameters = new Dictionary<string, string>
             {
-                task1, task2, task3
+                {"name", "John Doe"}, {"age", "35"}
             }
         };
+
+        job.AddTask("Match", matchTask, new[] { task2, task1 }, timeoutSeconds: 86400)
+            .WithRetry(3, 2000, false)
+            .WithNewCluster(cluster)
+            .WithDescription("Matches orders with user sessions");
 
         return job;
     }
@@ -739,6 +679,200 @@ public class JobApiClientTest : ApiClientTest
             HttpMethod.Post,
             apiUri,
             GetMatcher(MultiTaskRunJson),
+            Times.Once()
+        );
+    }
+
+    [TestMethod]
+    public async Task TestRunsGet()
+    {
+        var apiUri = new Uri(JobsApiUri, "runs/get");
+
+        const string response = @"
+                {
+                  ""job_id"": 11223344,
+                  ""run_id"": 455644833,
+                  ""number_in_job"": 455644833,
+                  ""creator_user_name"": ""user.name@databricks.com"",
+                  ""original_attempt_run_id"": 455644833,
+                  ""state"": {
+                    ""life_cycle_state"": ""PENDING"",
+                    ""result_state"": ""SUCCESS"",
+                    ""user_cancelled_or_timedout"": false,
+                    ""state_message"": """"
+                  },
+                  ""schedule"": {
+                    ""quartz_cron_expression"": ""20 30 * * * ?"",
+                    ""timezone_id"": ""Europe/London"",
+                    ""pause_status"": ""PAUSED""
+                  },
+                  ""tasks"": [
+                    {
+                      ""run_id"": 2112892,
+                      ""task_key"": ""Orders_Ingest"",
+                      ""description"": ""Ingests order data"",
+                      ""existing_cluster_id"": ""0923-164208-meows279"",
+                      ""spark_jar_task"": {
+                        ""main_class_name"": ""com.databricks.OrdersIngest""
+                      },
+                      ""state"": {
+                        ""life_cycle_state"": ""INTERNAL_ERROR"",
+                        ""result_state"": ""FAILED"",
+                        ""state_message"": """",
+                        ""user_cancelled_or_timedout"": false
+                      },
+                      ""cluster_instance"": {
+                        ""cluster_id"": ""0923-164208-meows279"",
+                        ""spark_context_id"": ""4348585301701786933""
+                      },
+                      ""attempt_number"": 0
+                    }],
+                  ""cluster_spec"": {
+                    ""existing_cluster_id"": ""0923-164208-meows279""
+                  },
+                  ""cluster_instance"": {
+                    ""cluster_id"": ""0923-164208-meows279"",
+                    ""spark_context_id"": ""4348585301701786933""
+                  },
+                  ""git_source"": null,
+                  ""trigger"": ""PERIODIC"",
+                  ""run_name"": ""A multitask job run"",
+                  ""run_page_url"": ""https://my-workspace.cloud.databricks.com/#job/39832/run/20"",
+                  ""run_type"": ""JOB_RUN"",
+                  ""attempt_number"": 0,
+                  ""repair_history"": [
+                    {
+                      ""type"": ""ORIGINAL"",
+                      ""start_time"": 1625060460483,
+                      ""end_time"": 1625060863413,
+                      ""state"": {
+                        ""life_cycle_state"": ""TERMINATED"",
+                        ""result_state"": ""SUCCESS"",
+                        ""user_cancelled_or_timedout"": false,
+                        ""state_message"": """"
+                      },
+                      ""id"": 734650698524280,
+                      ""task_run_ids"": [
+                        1106460542112844,
+                        988297789683452
+                      ]
+                    }
+                  ]
+                }
+        ";
+
+        var expectedRun = new Run
+        {
+            JobId = 11223344,
+            RunId = 455644833,
+            NumberInJob = 455644833,
+            CreatorUserName = "user.name@databricks.com",
+            OriginalAttemptRunId = 455644833,
+            State = new RunState
+            {
+                LifeCycleState = RunLifeCycleState.PENDING,
+                ResultState = RunResultState.SUCCESS,
+                UserCancelledOrTimedOut = false,
+                StateMessage = ""
+            },
+            Schedule = new CronSchedule
+            {
+                QuartzCronExpression = "20 30 * * * ?",
+                TimezoneId = "Europe/London",
+                PauseStatus = PauseStatus.PAUSED
+            },
+            Tasks = new[]
+            {
+                new RunTask
+                {
+                    RunId = 2112892,
+                    TaskKey = "Orders_Ingest",
+                    Description = "Ingests order data",
+                    ExistingClusterId = "0923-164208-meows279",
+                    SparkJarTask = new SparkJarTask
+                    {
+                        MainClassName = "com.databricks.OrdersIngest"
+                    },
+                    State = new RunState
+                    {
+                        LifeCycleState = RunLifeCycleState.INTERNAL_ERROR,
+                        ResultState = RunResultState.FAILED,
+                        UserCancelledOrTimedOut = false,
+                        StateMessage = ""
+                    },
+                    ClusterInstance = new ClusterInstance
+                    {
+                        ClusterId = "0923-164208-meows279",
+                        SparkContextId = "4348585301701786933"
+                    },
+                    AttemptNumber = 0
+                }
+            },
+            ClusterSpec = new ClusterSpec
+            {
+                ExistingClusterId = "0923-164208-meows279"
+            },
+            ClusterInstance = new ClusterInstance
+            {
+                ClusterId = "0923-164208-meows279",
+                SparkContextId = "4348585301701786933"
+            },
+            Trigger = TriggerType.PERIODIC,
+            RunName = "A multitask job run",
+            RunPageUrl = "https://my-workspace.cloud.databricks.com/#job/39832/run/20",
+            RunType = RunType.JOB_RUN,
+            AttemptNumber = 0
+        };
+
+        var expectedRepair = new RepairHistory
+        {
+            Items = new List<RepairHistoryItem>
+            {
+                new()
+                {
+                    Type = RepairHistoryItemType.ORIGINAL,
+                    StartTime = DateTimeOffset.FromUnixTimeMilliseconds(1625060460483),
+                    EndTime = DateTimeOffset.FromUnixTimeMilliseconds(1625060863413),
+                    State = new RunState
+                    {
+                        LifeCycleState = RunLifeCycleState.TERMINATED,
+                        ResultState = RunResultState.SUCCESS,
+                        UserCancelledOrTimedOut = false,
+                        StateMessage = ""
+                    },
+                    Id = 734650698524280,
+                    TaskRunIds = new []{1106460542112844, 988297789683452}
+                }
+            }
+        };
+
+
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Get, new Uri(apiUri, "?run_id=455644833&include_history=true"))
+            .ReturnsResponse(HttpStatusCode.OK, response, "application/json")
+            .Verifiable();
+
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
+
+        using var client = new JobsApiClient(hc);
+
+        var (run, repair) = await client.RunsGet(455644833, true);
+
+        AssertJsonDeepEquals(
+            JsonSerializer.Serialize(expectedRun, Options),
+            JsonSerializer.Serialize(run, Options)
+        );
+
+        AssertJsonDeepEquals(
+            JsonSerializer.Serialize(expectedRepair, Options),
+            JsonSerializer.Serialize(repair, Options)
+        );
+
+        handler.VerifyRequest(
+            HttpMethod.Get,
+            new Uri(apiUri, "?run_id=455644833&include_history=true"),
             Times.Once()
         );
     }
