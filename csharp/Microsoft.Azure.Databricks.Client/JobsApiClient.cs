@@ -146,17 +146,17 @@ namespace Microsoft.Azure.Databricks.Client
             return (response.Deserialize<Run>(Options), response.Deserialize<RepairHistory>(Options));
         }
 
-        //public async Task RunsCancel(long runId, CancellationToken cancellationToken = default)
-        //{
-        //    var request = new { run_id = runId };
-        //    await HttpPost(this.HttpClient, $"{ApiVersion}/jobs/runs/cancel", request, cancellationToken).ConfigureAwait(false);
-        //}
+        public async Task RunsCancel(long runId, CancellationToken cancellationToken = default)
+        {
+            var request = new { run_id = runId };
+            await HttpPost(this.HttpClient, $"{ApiVersion}/jobs/runs/cancel", request, cancellationToken).ConfigureAwait(false);
+        }
 
-        //public async Task RunsDelete(long runId, CancellationToken cancellationToken = default)
-        //{
-        //    var request = new { run_id = runId };
-        //    await HttpPost(this.HttpClient, $"{ApiVersion}/jobs/runs/delete", request, cancellationToken).ConfigureAwait(false);
-        //}
+        public async Task RunsDelete(long runId, CancellationToken cancellationToken = default)
+        {
+            var request = new { run_id = runId };
+            await HttpPost(this.HttpClient, $"{ApiVersion}/jobs/runs/delete", request, cancellationToken).ConfigureAwait(false);
+        }
 
         public async Task<IEnumerable<ViewItem>> RunsExport(long runId,
             ViewsToExport viewsToExport = ViewsToExport.CODE, CancellationToken cancellationToken = default)

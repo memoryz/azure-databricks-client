@@ -99,17 +99,17 @@ namespace Microsoft.Azure.Databricks.Client
         /// <param name="includeHistory">Whether to include the repair history in the response.</param>
         Task<(Run, RepairHistory)> RunsGet(long runId, bool includeHistory = default, CancellationToken cancellationToken = default);
 
-        ///// <summary>
-        ///// Cancels a run. The run is canceled asynchronously, so when this request completes, the run may still be running. The run will be terminated shortly. If the run is already in a terminal life_cycle_state, this method is a no-op.
-        ///// </summary>
-        ///// <param name="runId">The canonical identifier of the run for which to cancel. This field is required.</param>
-        //Task RunsCancel(long runId, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Cancels a run. The run is canceled asynchronously, so when this request completes, the run may still be running. The run will be terminated shortly. If the run is already in a terminal life_cycle_state, this method is a no-op.
+        /// </summary>
+        /// <param name="runId">The canonical identifier of the run for which to cancel. This field is required.</param>
+        Task RunsCancel(long runId, CancellationToken cancellationToken = default);
 
-        ///// <summary>
-        ///// Deletes a non-active run. Returns an error if the run is active.
-        ///// </summary>
-        ///// <param name="runId">The canonical identifier of the run for which to delete. This field is required.</param>
-        //Task RunsDelete(long runId, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Deletes a non-active run. Returns an error if the run is active.
+        /// </summary>
+        /// <param name="runId">The canonical identifier of the run for which to delete. This field is required.</param>
+        Task RunsDelete(long runId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves the export of a job run task.

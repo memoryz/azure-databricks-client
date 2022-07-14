@@ -950,4 +950,54 @@ public class JobApiClientTest : ApiClientTest
         AssertJsonDeepEquals(response, JsonSerializer.Serialize(wrapped, Options));
         handler.VerifyRequest(HttpMethod.Get, expectedRequestUri, Times.Once());
     }
+
+    [TestMethod]
+    public async Task TestRunsDelete()
+    {
+        var apiUri = new Uri(JobsApiUri, "runs/delete");
+
+        const string expectedRequest = @"
+            {
+                ""run_id"": 455644833
+            }
+        ";
+
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, "application/json")
+            .Verifiable();
+
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
+
+        using var client = new JobsApiClient(hc);
+        await client.RunsDelete(455644833);
+        handler.VerifyRequest(HttpMethod.Post, apiUri, GetMatcher(expectedRequest), Times.Once());
+    }
+
+    [TestMethod]
+    public async Task TestRunsCancel()
+    {
+        var apiUri = new Uri(JobsApiUri, "runs/cancel");
+
+        const string expectedRequest = @"
+            {
+                ""run_id"": 455644833
+            }
+        ";
+
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, "application/json")
+            .Verifiable();
+
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
+
+        using var client = new JobsApiClient(hc);
+        await client.RunsCancel(455644833);
+        handler.VerifyRequest(HttpMethod.Post, apiUri, GetMatcher(expectedRequest), Times.Once());
+    }
 }
