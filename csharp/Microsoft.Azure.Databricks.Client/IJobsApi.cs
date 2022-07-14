@@ -111,15 +111,15 @@ namespace Microsoft.Azure.Databricks.Client
         ///// <param name="runId">The canonical identifier of the run for which to delete. This field is required.</param>
         //Task RunsDelete(long runId, CancellationToken cancellationToken = default);
 
-        ///// <summary>
-        ///// Retrieves the export of a job run task.
-        ///// </summary>
-        ///// <remarks>
-        ///// Only notebook runs can be exported in HTML format at the moment. Exporting other runs of other types will fail.
-        ///// </remarks>
-        ///// <param name="runId">The canonical identifier for the run. This field is required.</param>
-        ///// <param name="viewsToExport">Which views to export (CODE, DASHBOARDS, or ALL). Defaults to CODE.</param>
-        //Task<IEnumerable<ViewItem>> RunsExport(long runId, ViewsToExport viewsToExport = ViewsToExport.CODE, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Retrieves the export of a job run task.
+        /// </summary>
+        /// <remarks>
+        /// Only notebook runs can be exported in HTML format at the moment. Exporting other runs of other types will fail.
+        /// </remarks>
+        /// <param name="runId">The canonical identifier for the run. This field is required.</param>
+        /// <param name="viewsToExport">Which views to export (CODE, DASHBOARDS, or ALL). Defaults to CODE.</param>
+        Task<IEnumerable<ViewItem>> RunsExport(long runId, ViewsToExport viewsToExport = ViewsToExport.CODE, CancellationToken cancellationToken = default);
 
         ///// <summary>
         ///// Retrieve the output of a run. When a notebook task returns value through the Notebook Workflow Exit call, you can use this endpoint to retrieve that value. Note that Databricks restricts this API to return the first 5 MB of the output. For returning a larger result, you can store job results in a cloud storage service.

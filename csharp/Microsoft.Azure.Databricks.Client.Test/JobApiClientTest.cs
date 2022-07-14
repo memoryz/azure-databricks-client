@@ -915,4 +915,39 @@ public class JobApiClientTest : ApiClientTest
             Times.Once()
         );
     }
+
+    [TestMethod]
+    public async Task TestRunsExport()
+    {
+        var apiUri = new Uri(JobsApiUri, "runs/export");
+
+        var expectedRequestUri = new Uri(apiUri, "?run_id=455644833&views_to_export=DASHBOARDS");
+
+        const string response = @"
+        {
+          ""views"": [
+            {
+              ""content"": ""notebook content"",
+              ""name"": ""notebook name"",
+              ""type"": ""NOTEBOOK""
+            }
+          ]
+        }
+        ";
+
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Get, expectedRequestUri)
+            .ReturnsResponse(HttpStatusCode.OK, response, "application/json")
+            .Verifiable();
+
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
+
+        using var client = new JobsApiClient(hc);
+        var views = await client.RunsExport(455644833, ViewsToExport.DASHBOARDS);
+        var wrapped = new {views};
+        AssertJsonDeepEquals(response, JsonSerializer.Serialize(wrapped, Options));
+        handler.VerifyRequest(HttpMethod.Get, expectedRequestUri, Times.Once());
+    }
 }

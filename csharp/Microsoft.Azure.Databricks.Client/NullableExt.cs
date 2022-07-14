@@ -46,7 +46,7 @@ public static class NullableExt
     /// </summary>
     public static TOut? Map<TIn, TOut>(this TIn? source, Func<TIn, TOut> func)
         where TIn : struct
-        where TOut: class?
+        where TOut: class
     {
         return source == null ? null : func(source.Value);
     }

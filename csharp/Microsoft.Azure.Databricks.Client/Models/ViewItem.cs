@@ -23,6 +23,7 @@ namespace Microsoft.Azure.Databricks.Client.Models
         /// Type of the view item (e.g., NOTEBOOK, DASHBOARD)
         /// </summary>
         [JsonPropertyName("type")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public ViewType Type { get; set; }
     }
 }

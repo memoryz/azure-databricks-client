@@ -135,7 +135,6 @@ namespace Microsoft.Azure.Databricks.Client
             url += expandTasks ? "&expand_task=true" : EmptyStr();
             url += startTimeFrom.Map(time => $"&start_time_from={time.ToUnixTimeMilliseconds()}").GetOrElse(EmptyStr);
             url += startTimeTo.Map(time => $"&start_time_to={time.ToUnixTimeMilliseconds()}").GetOrElse(EmptyStr);
-            
             return await HttpGet<RunList>(this.HttpClient, url, cancellationToken).ConfigureAwait(false);
         }
 
@@ -159,21 +158,15 @@ namespace Microsoft.Azure.Databricks.Client
         //    await HttpPost(this.HttpClient, $"{ApiVersion}/jobs/runs/delete", request, cancellationToken).ConfigureAwait(false);
         //}
 
-        //public async Task<IEnumerable<ViewItem>> RunsExport(long runId,
-        //    ViewsToExport viewsToExport = ViewsToExport.CODE, CancellationToken cancellationToken = default)
-        //{
-        //    var url = $"{ApiVersion}/jobs/runs/export?run_id={runId}&views_to_export={viewsToExport}";
-        //    var viewItemList = await HttpGet<JsonObject>(this.HttpClient, url, cancellationToken).ConfigureAwait(false);
+        public async Task<IEnumerable<ViewItem>> RunsExport(long runId,
+            ViewsToExport viewsToExport = ViewsToExport.CODE, CancellationToken cancellationToken = default)
+        {
+            var url = $"{ApiVersion}/jobs/runs/export?run_id={runId}&views_to_export={viewsToExport}";
+            var viewItemList = await HttpGet<JsonObject>(this.HttpClient, url, cancellationToken).ConfigureAwait(false);
 
-        //    if (viewItemList.TryGetPropertyValue("views", out var views))
-        //    {
-        //        return views.Deserialize<IEnumerable<ViewItem>>(Options);
-        //    }
-        //    else
-        //    {
-        //        return Enumerable.Empty<ViewItem>();
-        //    }
-        //}
+            viewItemList.TryGetPropertyValue("views", out var views);
+            return views.Map(v => v.Deserialize<IEnumerable<ViewItem>>(Options)).GetOrElse(Enumerable.Empty<ViewItem>);
+        }
 
         //public async Task<(string, string, Run)> RunsGetOutput(long runId, CancellationToken cancellationToken = default)
         //{
