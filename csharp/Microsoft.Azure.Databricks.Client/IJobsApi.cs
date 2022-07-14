@@ -63,23 +63,34 @@ namespace Microsoft.Azure.Databricks.Client
         Task<long> RunSubmit(RunSubmitSettings settings, IEnumerable<AccessControlRequest> accessControlList = default, string idempotencyToken = default,
             CancellationToken cancellationToken = default);
 
-        ///// <summary>
-        ///// Lists runs from most recently started to least.
-        ///// </summary>
-        ///// <param name="jobId">The job for which to list runs. If omitted, the Jobs service will list runs from all jobs.</param>
-        ///// <param name="offset">The offset of the first run to return, relative to the most recent run.</param>
-        ///// <param name="limit">The number of runs to return. This value should be greater than 0 and less than 1000. The default value is 20. If a request specifies a limit of 0, the service will instead use the maximum limit.</param>
-        ///// <param name="activeOnly">
-        ///// if true, only active runs will be included in the results; otherwise, lists both active and completed runs.
-        ///// Note: This field cannot be true when completed_only is true.
-        ///// </param>
-        ///// <param name="completedOnly">
-        ///// if true, only completed runs will be included in the results; otherwise, lists both active and completed runs.
-        ///// Note: This field cannot be true when active_only is true.
-        ///// </param>
-        ///// <param name="runType">The type of runs to return. For a description of run types, see Run.</param>
-        //Task<RunList> RunsList(long? jobId = null, int offset = 0, int limit = 20, bool activeOnly = false,
-        //    bool completedOnly = false, /*RunType? runType = null, */ CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Lists runs from most recently started to least.
+        /// </summary>
+        /// <param name="jobId">The job for which to list runs. If omitted, the Jobs service will list runs from all jobs.</param>
+        /// <param name="offset">The offset of the first run to return, relative to the most recent run.</param>
+        /// <param name="limit">The number of runs to return. This value should be greater than 0 and less than 1000. The default value is 20. If a request specifies a limit of 0, the service will instead use the maximum limit.</param>
+        /// <param name="activeOnly">
+        /// if true, only active runs will be included in the results; otherwise, lists both active and completed runs.
+        /// Note: This field cannot be true when completed_only is true.
+        /// </param>
+        /// <param name="completedOnly">
+        /// if true, only completed runs will be included in the results; otherwise, lists both active and completed runs.
+        /// Note: This field cannot be true when active_only is true.
+        /// </param>
+        /// <param name="runType">The type of runs to return. For a description of run types, see Run.</param>
+        /// <param name="expandTasks">Whether to include task and cluster details in the response.</param>
+        /// <param name="startTimeFrom">
+        /// Show runs that started _at or after_ this value. Can be combined with _start_time_to_
+        /// to filter by a time range.
+        /// </param>
+        /// <param name="startTimeTo">
+        /// Show runs that started _at or before_ this value. The value must be
+        /// a UTC timestamp in milliseconds. Can be combined with
+        /// _start_time_from_ to filter by a time range.
+        /// </param>
+        Task<RunList> RunsList(long? jobId = default, int offset = 0, int limit = 25, bool activeOnly = default, bool completedOnly = default, 
+            RunType? runType = default, bool expandTasks = default, DateTimeOffset? startTimeFrom = default, DateTimeOffset? startTimeTo = default,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves the metadata of a run.

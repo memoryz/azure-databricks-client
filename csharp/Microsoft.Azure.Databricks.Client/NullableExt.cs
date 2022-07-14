@@ -42,6 +42,16 @@ public static class NullableExt
     }
 
     /// <summary>
+    /// Returns a nullable containing the result of applying `func` to this nullable's value if this nullable is nonempty.
+    /// </summary>
+    public static TOut? Map<TIn, TOut>(this TIn? source, Func<TIn, TOut> func)
+        where TIn : struct
+        where TOut: class?
+    {
+        return source == null ? null : func(source.Value);
+    }
+
+    /// <summary>
     /// Returns the nullable's value if the nullable is not null, otherwise return the result of evaluating default.
     /// </summary>
     public static TOut GetOrElse<TIn, TOut>(this TIn? source, Func<TOut> @default) where TIn : TOut where TOut : class

@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Databricks.Client.Models;
+﻿using System;
+using Microsoft.Azure.Databricks.Client.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -110,38 +111,33 @@ namespace Microsoft.Azure.Databricks.Client
             return result.RunId;
         }
 
-        //public async Task<RunList> RunsList(long? jobId = null, int offset = 0, int limit = 20, bool activeOnly = false,
-        //    bool completedOnly = false, /*RunType? runType = null, */ CancellationToken cancellationToken = default)
-        //{
-        //    if (activeOnly && completedOnly)
-        //    {
-        //        throw new ArgumentException(
-        //            $"{nameof(activeOnly)} and {nameof(completedOnly)} cannot both be true.");
-        //    }
+        public async Task<RunList> RunsList(long? jobId = default, int offset = 0, int limit = 25,
+            bool activeOnly = default, bool completedOnly = default,
+            RunType? runType = default, bool expandTasks = default, DateTimeOffset? startTimeFrom = default,
+            DateTimeOffset? startTimeTo = default,
+            CancellationToken cancellationToken = default)
+        {
+            if (activeOnly && completedOnly)
+            {
+                throw new ArgumentException(
+                    $"{nameof(activeOnly)} and {nameof(completedOnly)} cannot both be true."
+                );
+            }
 
-        //    var url = $"{ApiVersion}/jobs/runs/list?limit={limit}&offset={offset}";
-        //    if (jobId.HasValue)
-        //    {
-        //        url += $"&job_id={jobId.Value}";
-        //    }
+            static string EmptyStr() => string.Empty;
 
-        //    if (activeOnly)
-        //    {
-        //        url += "&active_only=true";
-        //    }
+            var url = $"{ApiVersion}/jobs/runs/list?limit={limit}&offset={offset}";
 
-        //    if (completedOnly)
-        //    {
-        //        url += "&completed_only=true";
-        //    }
-
-        //    // if (runType.HasValue)
-        //    // {
-        //    //     url += $"&run_type={runType.Value}";
-        //    // }
-
-        //    return await HttpGet<RunList>(this.HttpClient, url, cancellationToken).ConfigureAwait(false);
-        //}
+            url += jobId.Map(id => $"&job_id={id}").GetOrElse(EmptyStr);
+            url += activeOnly ? "&active_only=true" : EmptyStr();
+            url += completedOnly ? "&completed_only=true" : EmptyStr();
+            url += runType.Map(type => $"&run_type={type}").GetOrElse(EmptyStr);
+            url += expandTasks ? "&expand_task=true" : EmptyStr();
+            url += startTimeFrom.Map(time => $"&start_time_from={time.ToUnixTimeMilliseconds()}").GetOrElse(EmptyStr);
+            url += startTimeTo.Map(time => $"&start_time_to={time.ToUnixTimeMilliseconds()}").GetOrElse(EmptyStr);
+            
+            return await HttpGet<RunList>(this.HttpClient, url, cancellationToken).ConfigureAwait(false);
+        }
 
         public async Task<(Run, RepairHistory)> RunsGet(long runId, bool includeHistory = default,
             CancellationToken cancellationToken = default)
