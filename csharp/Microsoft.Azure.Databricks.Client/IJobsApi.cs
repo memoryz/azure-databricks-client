@@ -57,7 +57,7 @@ public interface IJobsApi : IDisposable
     /// <summary>
     /// Runs the job now, and returns the run_id of the triggered run.
     /// </summary>
-    Task<long> RunNow(long jobId, RunParameters runParams, string idempotencyToken = default,
+    Task<long> RunNow(long jobId, RunParameters runParams = default, string idempotencyToken = default,
         CancellationToken cancellationToken = default);
 
     /// <summary>

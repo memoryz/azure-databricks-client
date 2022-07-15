@@ -647,6 +647,47 @@ public class JobApiClientTest : ApiClientTest
     }
 
     [TestMethod]
+    public async Task TestRunNowNoParam()
+    {
+        var apiUri = new Uri(JobsApiUri, "run-now");
+
+        const string expectedRequest = @"
+            {
+              ""job_id"": 11223344,
+              ""idempotency_token"": ""8f018174-4792-40d5-bcbc-3e6a527352c8""
+            }
+        ";
+
+        const string expectedResponse = @"
+            {
+              ""run_id"": 455644833,
+              ""number_in_job"": 455644833
+            }
+        ";
+
+        var handler = CreateMockHandler();
+        handler
+            .SetupRequest(HttpMethod.Post, apiUri)
+            .ReturnsResponse(HttpStatusCode.OK, expectedResponse, "application/json")
+            .Verifiable();
+
+        var hc = handler.CreateClient();
+        hc.BaseAddress = BaseApiUri;
+
+        using var client = new JobsApiClient(hc);
+        var runId = await client.RunNow(11223344, idempotencyToken: "8f018174-4792-40d5-bcbc-3e6a527352c8");
+
+        Assert.AreEqual(455644833, runId);
+
+        handler.VerifyRequest(
+            HttpMethod.Post,
+            apiUri,
+            GetMatcher(expectedRequest),
+            Times.Once()
+        );
+    }
+
+    [TestMethod]
     public async Task TestRunSubmit()
     {
         var apiUri = new Uri(JobsApiUri, "runs/submit");

@@ -40,5 +40,7 @@ public enum RunLifeCycleState
     /// <summary>
     /// An exceptional state that indicates a failure in the Jobs service, such as network failure over a long period. If a run on a new cluster ends in an INTERNAL_ERROR state, the Jobs service will terminate the cluster as soon as possible. This state is terminal.
     /// </summary>
-    INTERNAL_ERROR
+    INTERNAL_ERROR,
+
+    BLOCKED
 }

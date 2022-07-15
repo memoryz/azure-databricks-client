@@ -78,11 +78,11 @@ public class JobsApiClient : ApiClient, IJobsApi
             .ConfigureAwait(false);
     }
 
-    public async Task<long> RunNow(long jobId, RunParameters runParams, string idempotencyToken = default,
+    public async Task<long> RunNow(long jobId, RunParameters runParams = default, string idempotencyToken = default,
         CancellationToken cancellationToken = default)
     {
-        var request = JsonSerializer.SerializeToNode(runParams, Options)!.AsObject();
-
+        var request = runParams.Map(p => JsonSerializer.SerializeToNode(p, Options)!.AsObject())
+            .GetOrElse(() => new JsonObject());
         request.Add("job_id", jobId);
         idempotencyToken.Iter(token => request.Add("idempotency_token", token));
 
